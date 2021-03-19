@@ -26,86 +26,92 @@
 #include <math.h>
 #include <a_see_parser/a_see_parser.h>
 
-int expr(a_see_parser_t*);
-int term(a_see_parser_t*);
-int factor(a_see_parser_t*);
-int power(a_see_parser_t*);
-int value(a_see_parser_t*);
-int function(a_see_parser_t*);
-int number(a_see_parser_t*);
-int variable(a_see_parser_t*);
+/*
+#define PLUS NEXT_CHR() == '+'
+#define MINUS NEXT_CHR('-')
+#define TIMES) NEXT_CHR('*')
+#define DIVIDE NEXT_CHR('/')
+#define POWER) NEXT_CHR('^')
+*/
+
+int expr();
+int term();
+int factor();
+int power();
+int value();
+int function();
+int number();
+int variable();
 // expr = term
 // Success if all tokens consumed
-int expr(a_see_parser_t* acp)
+int expr()
 {
-  return term(acp) && NEXT_CHR(acp) == 0;
+  return term() && !ANY;
 }
 
 //  term = factor ( ( '+' | '-' ) factor )*
-int term(a_see_parser_t* acp)
+int term()
 {
   int c;
-  return factor(acp) &&
-    ZERO_OR_MORE(acp,((c = NEXT_CHR(acp)) == '+' || c == '-') && factor(acp),,);
+  return factor() &&
+    ZERO_OR_MORE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,);
 }
 
 //  factor = ( ('+' | '-' ) factor ) | ( power ( ( '*' | '/' ) power)* )
-int factor(a_see_parser_t* acp)
+int factor()
 {
   int c;
-  return RULE(acp,((c = NEXT_CHR(acp)) == '+'  || c == '-') && factor(acp),,)
+  return RULE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,)
   ||
-  (power(acp) &&
-        ZERO_OR_MORE(acp,((c = NEXT_CHR(acp)) == '*' || c == '/') && power(acp),,));
+  (power() &&
+        ZERO_OR_MORE(((c=NEXT_CHR) == '*' || c == '/') && power(),,));
 }
 
 //  power = value ( '^' power )*
-int power(a_see_parser_t* acp)
+int power()
 {
-  return value(acp) && ZERO_OR_MORE(acp,NEXT_CHR(acp) == '^' && power(acp),,);
+  return value() && ZERO_OR_MORE(NEXT_CHR == '^' && power(),,);
 }
 
 //  value = number | '(' term ')' | function | variable
-int value(a_see_parser_t* acp)
+int value()
 {
-  return number(acp)
+  return number()
     ||
-    RULE(acp,NEXT_CHR(acp) == '(' && term(acp) && NEXT_CHR(acp) == ')',,)
+    RULE(NEXT_CHR == '(' && term() && NEXT_CHR == ')',,)
     ||
-    function(acp)
+    function()
     ||
-    variable(acp);
+    variable();
 }
-#define REAL(ACP) a_see_parser_floating_point(ACP)
-#define INTEGER(ACP) (a_see_parser_decimal_integer(ACP) || a_see_parser_octal_integer(ACP) \
-    || a_see_parser_hex_integer(ACP))
+
+#define INTEGER (DECIMAL_INTEGER || OCTAL_INTEGER || HEX_INTEGER)
 // number <- REAL / INTEGER
-int number(a_see_parser_t* acp)
+int number()
 {
-  return RULE(acp,REAL(acp) || INTEGER(acp),,);
+  return RULE(REAL || INTEGER,,);
 }
 
-#define IDENT(ACP) a_see_parser_ident(ACP)
 //  function = ident '(' term ')'
-int function(a_see_parser_t* acp)
+int function()
 {
-  return RULE(acp,IDENT(acp) && NEXT_CHR(acp) == '('
-          && term(acp) && NEXT_CHR(acp) == ')',,);
+  return RULE(IDENTIFIER && NEXT_CHR == '('
+          && term() && NEXT_CHR == ')',,);
 }
 
-int variable(a_see_parser_t* acp)
+int variable()
 {
-  return RULE(acp,IDENT(acp),,);
+  return RULE(IDENTIFIER,,);
 }
 
+a_see_parser_t* __global_a_see_parser_pointer__;
 int main(int argc,char* argv[])
 {
   int i;
-  a_see_parser_t *acp = new_a_see_parser();
+  a_see_parser_t calculator_parser = A_SEE_PARSER_DEFUALT;
+  __global_a_see_parser_pointer__ = &calculator_parser;
   for(i=1;i<argc;i++) {
-    a_see_parser_set_string(acp,argv[i]);
-    printf("%s -- %s\n",argv[i],expr(acp) ? "Success" : "Fail");
-    a_see_parser_reset(acp);
+    __global_a_see_parser_pointer__->ptr_=argv[i];
+    printf("%s -- %s\n",argv[i],expr() ? "Success" : "Fail");
   }
-  delete_a_see_parser(acp);
 }
