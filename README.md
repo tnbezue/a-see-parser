@@ -7,7 +7,7 @@ Allows a PEG-like grammar to be specified in directly in C.
 
 PEG grammar for simple calculater
 
-    expr <- term
+    expr <- term !.
 
     term <- factor ( ( '+' / '-' ) factor )*
 
@@ -23,55 +23,55 @@ PEG grammar for simple calculater
 
 Equivalent using a-see-parser
 
-    int expr(a_see_parser_t* acp)
+    int expr()
     {
-      return term(acp) && NEXT_CHR(acp) == 0;
+      return term() && !ANY;
     }
 
-    int term(a_see_parser_t* acp)
+    int term()
     {
       int c;
-      return factor(acp) &&
-        ZERO_OR_MORE(acp,((c = NEXT_CHR(acp)) == '+' || c == '-') && factor(acp),,);
+      return factor() &&
+        ZERO_OR_MORE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,);
     }
 
-    int factor(a_see_parser_t* acp)
+    int factor()
     {
       int c;
-      return RULE(acp,((c = NEXT_CHR(acp)) == '+'  || c == '-') && factor(acp),,)
+      return RULE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,)
       ||
-      (power(acp) &&
-            ZERO_OR_MORE(acp,((c = NEXT_CHR(acp)) == '*' || c == '/') && power(acp),,));
+      (power() &&
+            ZERO_OR_MORE(((c=NEXT_CHR) == '*' || c == '/') && power(),,));
     }
 
-    int power(a_see_parser_t* acp)
+    int power()
     {
-      return value(acp) && ZERO_OR_MORE(acp,NEXT_CHR(acp) == '^' && power(acp),,);
+      return value() && ZERO_OR_MORE(NEXT_CHR == '^' && power(),,);
     }
 
-    int value(a_see_parser_t* acp)
+    int value()
     {
-      return number(acp)
+      return number()
         ||
-        RULE(acp,NEXT_CHR(acp) == '(' && term(acp) && NEXT_CHR(acp) == ')',,)
+        RULE(NEXT_CHR == '(' && term() && NEXT_CHR == ')',,)
         ||
-        function(acp)
+        function()
         ||
-        variable(acp);
+        variable();
     }
 
-    int number(a_see_parser_t* acp)
+    int number()
     {
-      return RULE(acp,REAL(acp) || INTEGER(acp),,);
+      return RULE(REAL || INTEGER,,);
     }
 
-    int function(a_see_parser_t* acp)
+    int function()
     {
-      return RULE(acp,IDENT(acp) && NEXT_CHR(acp) == '('
-              && term(acp) && NEXT_CHR(acp) == ')',,);
+      return RULE(IDENTIFIER && NEXT_CHR == '('
+              && term() && NEXT_CHR == ')',,);
     }
 
-    int variable(a_see_parser_t* acp)
+    int variable()
     {
-      return RULE(acp,IDENT(acp),,);
+      return RULE(IDENTIFIER,,);
     }
