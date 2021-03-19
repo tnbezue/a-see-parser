@@ -1,6 +1,6 @@
 # a-see-parser
 A simple, easy, elegant (or silly, elementary, experimental) general purpose parser.
-Allows a PEG-like grammar to be specified in directly in C.
+Allows a PEG-like grammar to be specified in C.
 
 
 ## Example
