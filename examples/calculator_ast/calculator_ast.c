@@ -176,8 +176,8 @@ int function(ast_t** ast)
   char id[128];
   int rc=0;
   ast_t* fterm = NULL;
-  return RULE(IDENTIFIER && CAPTURE_TEXT(id,128) && NEXT_CHR == '('
-          && term(&fterm) && (rc = 1) && NEXT_CHR == ')',
+  return RULE(IDENTIFIER && CAPTURE_TEXT(id,128) && LPAREN
+          && term(&fterm) && (rc = 1) && RPAREN,
           const math_function_description_t* func= get_math_function(id);
           if(func)
             *ast = (ast_t*) new_math_function(func,fterm);

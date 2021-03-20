@@ -32,6 +32,8 @@
 #define TIMES ((PEEK_CHR == '*' && NEXT_CHR) && SPACE)
 #define DIVIDE ((PEEK_CHR == '/' && NEXT_CHR) && SPACE)
 #define POWER ((PEEK_CHR == '^' && NEXT_CHR) && SPACE)
+#define LPAREN ((PEEK_CHR == '(' && NEXT_CHR) && SPACE)
+#define RPAREN ((PEEK_CHR == ')' && NEXT_CHR) && SPACE)
 
 
 int expr();
@@ -77,7 +79,7 @@ int value()
 {
   return number()
     ||
-    RULE(NEXT_CHR == '(' && term() && NEXT_CHR == ')',,)
+    RULE(LPAREN && term() && RPAREN,,)
     ||
     function()
     ||
@@ -94,8 +96,7 @@ int number()
 //  function = ident '(' term ')'
 int function()
 {
-  return RULE(IDENTIFIER && NEXT_CHR == '('
-          && term() && NEXT_CHR == ')',,);
+  return RULE(IDENTIFIER && LPAREN && term() && RPAREN,,);
 }
 
 int variable()

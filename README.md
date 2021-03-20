@@ -25,35 +25,31 @@ Equivalent using a-see-parser
 
     int expr()
     {
-      return term() && !ANY;
+      return SPACE && term() && !ANY;
     }
 
     int term()
     {
-      int c;
-      return factor() &&
-        ZERO_OR_MORE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,);
+      return factor() && ZERO_OR_MORE((PLUS || MINUS) && factor(),,);
     }
 
     int factor()
     {
-      int c;
-      return RULE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,)
+      return RULE((PLUS || MINUS) && factor(),,)
       ||
-      (power() &&
-            ZERO_OR_MORE(((c=NEXT_CHR) == '*' || c == '/') && power(),,));
+      (power() && ZERO_OR_MORE((TIMES || DIVIDE) && power(),,));
     }
 
     int power()
     {
-      return value() && ZERO_OR_MORE(NEXT_CHR == '^' && power(),,);
+      return value() && ZERO_OR_MORE(POWER && power(),,);
     }
 
     int value()
     {
       return number()
         ||
-        RULE(NEXT_CHR == '(' && term() && NEXT_CHR == ')',,)
+        RULE(LPAREN && term() && RPAREN,,)
         ||
         function()
         ||
@@ -67,8 +63,7 @@ Equivalent using a-see-parser
 
     int function()
     {
-      return RULE(IDENTIFIER && NEXT_CHR == '('
-              && term() && NEXT_CHR == ')',,);
+      return RULE(IDENTIFIER && LPAREN && term() && RPAREN,,);
     }
 
     int variable()
