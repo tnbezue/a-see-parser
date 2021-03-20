@@ -80,6 +80,14 @@ const variable_description_t* get_variable(const char* name)
   return NULL;
 }
 
+#define PLUS ((PEEK_CHR == '+' && NEXT_CHR) && SPACE)
+#define MINUS ((PEEK_CHR == '-' && NEXT_CHR) && SPACE)
+#define TIMES ((PEEK_CHR == '*' && NEXT_CHR) && SPACE)
+#define DIVIDE ((PEEK_CHR == '/' && NEXT_CHR) && SPACE)
+#define POWER ((PEEK_CHR == '^' && NEXT_CHR) && SPACE)
+#define LPAREN ((PEEK_CHR == '(' && NEXT_CHR) && SPACE)
+#define RPAREN ((PEEK_CHR == ')' && NEXT_CHR) && SPACE)
+
 int expr(ast_t**);
 int term(ast_t**);
 int factor(ast_t**);
@@ -94,50 +102,50 @@ int expr(ast_t** ast)
   return term(ast) && !ANY;
 }
 
-//  term = factor ( ( '+' | '-' ) factor )*
+//  term <- factor ( ( '+' / '-' ) factor )*
 int term(ast_t** last)
 {
   int c;
-  ast_t* rast;
+  ast_t* rast=NULL;
   return factor(last) &&
-    ZERO_OR_MORE(((c=NEXT_CHR) == '+' || c == '-') && factor(&rast),
+    ZERO_OR_MORE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(&rast),
       *last = (ast_t*)new_binary_op(*last,c,rast);
     ,);
 }
 
-//  factor = ( ('+' | '-' ) factor ) | ( power ( ( '*' | '/' ) power)* )
+//  factor <- ( ('+' / '-' ) factor ) / ( power ( '*' / '/' ) power )* )
 int factor(ast_t** last)
 {
   int c;
-  ast_t* rast;
-  return RULE(((c=NEXT_CHR) == '+' || c == '-') && factor(last),
+  ast_t* rast=NULL;
+  return RULE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(last),
       *last = (ast_t*)new_unary_op(c,*last);
     ,)
   ||
   (power(last) &&
-        ZERO_OR_MORE(((c=NEXT_CHR) == '*' || c == '/') && power(&rast),
+        ZERO_OR_MORE(((TIMES && (c='*')) || (DIVIDE && (c='/'))) && power(&rast),
           *last = (ast_t*)new_binary_op(*last,c,rast);
         ,));
 }
 
-//  power = value ( '^' power )*
+//  power <- value ( '^' power )*
 int power(ast_t** last)
 {
-  ast_t* rast;
-  return value(last) && ZERO_OR_MORE(NEXT_CHR == '^' && power(&rast),
+  ast_t* rast=NULL;
+  return value(last) && ZERO_OR_MORE(POWER && power(&rast),
     *last = (ast_t*) new_binary_op(*last,'^',rast);
   ,);
 }
 
-//  value = number | '(' term ')' | function | variable
+//  value <- number / '(' term ')' / function / variable
 int value(ast_t** ast)
 {
   int rc=0;
   return number(ast)
     ||
-    RULE(NEXT_CHR == '(' && term(ast) && (rc = 1) && NEXT_CHR == ')',
+    RULE(LPAREN && term(ast) && (rc = 1) && RPAREN,
     ,
- //     if(rc && *ast) delete_ast(*ast);
+      if(rc && *ast) delete_ast(*ast);
     )
     ||
     function(ast)
@@ -145,7 +153,7 @@ int value(ast_t** ast)
     variable(ast);
 }
 
-#define INTEGER (DECIMAL_INTEGER || OCTAL_INTEGER || HEX_INTEGER)
+#define INTEGER (DECIMAL_INTEGER || HEX_INTEGER || OCTAL_INTEGER)
 // number <- REAL / INTEGER
 int number(ast_t** ast)
 {
@@ -162,7 +170,7 @@ int number(ast_t** ast)
   ,);
 }
 
-//  function = ident '(' term ')'
+//  function <- ident '(' term ')'
 int function(ast_t** ast)
 {
   char id[128];
@@ -178,7 +186,7 @@ int function(ast_t** ast)
             exit(1);
           }
           ,
-//            if(rc && fterm) delete_ast(fterm);
+            if(rc && fterm) delete_ast(fterm);
           );
 }
 
@@ -196,7 +204,7 @@ int main(int argc,char* argv[])
 {
   int i;
   for(i=1;i<argc;i++) {
-    ast_t* ast;
+    ast_t* ast=NULL;
     SET_PARSE_STRING(argv[i]);
     if(expr(&ast)) {
       x = 12.5;
@@ -212,6 +220,7 @@ int main(int argc,char* argv[])
       ast->graph(ast,f);
       fprintf(f,"}\n");
       fclose(f);
+      delete_ast(ast);
     }
     else
       printf("%s -- Failed\n",argv[i]);

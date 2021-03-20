@@ -90,6 +90,14 @@ const variable_description_t* get_variable(const char* name)
   return NULL;
 }
 
+#define PLUS ((PEEK_CHR == '+' && NEXT_CHR) && SPACE)
+#define MINUS ((PEEK_CHR == '-' && NEXT_CHR) && SPACE)
+#define TIMES ((PEEK_CHR == '*' && NEXT_CHR) && SPACE)
+#define DIVIDE ((PEEK_CHR == '/' && NEXT_CHR) && SPACE)
+#define POWER ((PEEK_CHR == '^' && NEXT_CHR) && SPACE)
+#define LPAREN ((PEEK_CHR == '(' && NEXT_CHR) && SPACE)
+#define RPAREN ((PEEK_CHR == ')' && NEXT_CHR) && SPACE)
+
 int expr(double*);
 int term(double*);
 int factor(double*);
@@ -98,19 +106,20 @@ int value(double*);
 int function(double*);
 int number(double*);
 int variable(double*);
-// expr = term !.
+
+// expr <- term !.
 int expr(double* val)
 {
-  return term(val) && !ANY;
+  return SPACE && term(val) && !ANY;
 }
 
-//  term = factor ( ( '+' | '-' ) factor )*
+//  term <- factor ( ( '+' { c = '+'; } ? '-' { c='-'; } ) factor )*
 int term(double* lval)
 {
   int c;
   double rval;
   return factor(lval) &&
-    ZERO_OR_MORE(((c=NEXT_CHR) == '+' || c == '-') && factor(&rval),
+    ZERO_OR_MORE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(&rval),
       if(c == '+')
         *lval += rval;
       else
@@ -123,13 +132,13 @@ int factor(double* lval)
 {
   int c;
   double rval;
-  return RULE(((c=NEXT_CHR) == '+' || c == '-') && factor(lval),
+  return RULE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(lval),
     if(c == '-')
       *lval = -*lval;
     ,)
   ||
   (power(lval) &&
-        ZERO_OR_MORE(((c=NEXT_CHR) == '*' || c == '/') && power(&rval),
+        ZERO_OR_MORE(((TIMES && (c='*')) || (DIVIDE && (c='/'))) && power(&rval),
           if(c=='*')
             *lval *= rval;
           else
@@ -141,7 +150,7 @@ int factor(double* lval)
 int power(double* lval)
 {
   double rval;
-  return value(lval) && ZERO_OR_MORE(NEXT_CHR == '^' && power(&rval),
+  return value(lval) && ZERO_OR_MORE(POWER && power(&rval),
     *lval = pow(*lval,rval);
   ,);
 }
@@ -151,21 +160,25 @@ int value(double* val)
 {
   return number(val)
     ||
-    RULE(NEXT_CHR == '(' && term(val) && NEXT_CHR == ')',,)
+    RULE(LPAREN && term(val) && RPAREN,,)
     ||
     function(val)
     ||
     variable(val);
 }
 
-#define INTEGER (DECIMAL_INTEGER || OCTAL_INTEGER || HEX_INTEGER)
+#define INTEGER (DECIMAL_INTEGER || HEX_INTEGER || OCTAL_INTEGER)
 // number <- REAL / INTEGER
 int number(double* val)
 {
+  int rc=0;
   char nstr[128];
-  return RULE(REAL || INTEGER,
+  return RULE((REAL && (rc = 1))|| (INTEGER && (rc=2)),
     CAPTURE_TEXT(nstr,128);
-    *val = atof(nstr);
+    if(rc==1)
+      *val=atof(nstr);
+    else
+      *val=strtol(nstr,NULL,0);
   ,);
 }
 
@@ -173,8 +186,8 @@ int number(double* val)
 int function(double* val)
 {
   char id[128];
-  return RULE(IDENTIFIER && CAPTURE_TEXT(id,128) && NEXT_CHR == '('
-          && term(val) && NEXT_CHR == ')',
+  return RULE(IDENTIFIER && CAPTURE_TEXT(id,128) && LPAREN
+          && term(val) && RPAREN,
           const math_function_description_t* func= get_math_function(id);
           if(func)
             *val = func->func(*val);

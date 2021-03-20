@@ -35,7 +35,7 @@ typedef struct {
 } ast_t;
 
 void ast_init(void*,ast_dtor,print_ast_element,graph_ast_element,eval_ast_element);
-#define delete_ast(p) ((ast_t*)p)->dtor(p),free(p)
+#define delete_ast(p) (((ast_t*)p)->dtor(p),free(p))
 
 typedef struct {
   ast_t;
