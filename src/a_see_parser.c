@@ -20,81 +20,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-/*
-void dynamic_string_ctor(dynamic_string_t* ds)
-{
-  ds->text_=NULL;
-  ds->length_=0;
-}
-
-void dynamic_string_dtor(dynamic_string_t* ds)
-{
-  if(ds->text_)
-    free(ds->text_);
-}
-
-void a_see_parser_init(a_see_parser_t* acp)
-{
-  acp->stack_ = new_simple_array(sizeof(a_see_parser_position_t),NULL,NULL,NULL,NULL);
-  acp->text_ = new_dynamic_string();
-  acp->ptr_=NULL;
-  acp->line_number_=0;
-  acp->flags_=A_SEE_PARSER_DEFAULT_FLAGS;
-}
-
-void a_see_parser_dtor(a_see_parser_t* acp)
-{
-  delete_simple_array(acp->stack_);
-  delete_dynamic_string(acp->text_);
-}
-
-void dynamic_string_set(dynamic_string_t* ds,const char* str,unsigned int length)
-{
-  if(str) {
-    if(ds->length_ <= length) {
-      if(ds->text_)
-        free(ds->text_);
-      ds->length_=length+1;
-      ds->text_ = malloc(ds->length_);
-    }
-    strncpy(ds->text_,str,length);
-    ds->text_[length]=0;
-  }
-}
-
-void a_see_parser_reset(a_see_parser_t* acp)
-{
-  simple_array_clear(acp->stack_);
-}
-
-void a_see_parser_set_string(a_see_parser_t* acp,const char* str)
-{
-  acp->ptr_ = str;
-  acp->line_number_=1;
-}
-
-void a_see_parser_rule_start(a_see_parser_t* acp)
-{
-  a_see_parser_position_t pos = { .ptr_ = acp->ptr_, .line_number_= acp->line_number_};
-  simple_array_push_back(acp->stack_,&pos);
-}
-
-void a_see_parser_rule_success(a_see_parser_t* acp)
-{
-  simple_array_pop_back(acp->stack_);
-}
-
-void a_see_parser_rule_fail(a_see_parser_t* acp)
-{
-  a_see_parser_size_t s = simple_array_size(acp->stack_);
-  if(s) {
-    a_see_parser_position_t* pp = simple_array_at(acp->stack_,s-1);
-    acp->ptr_=pp->ptr_;
-    acp->line_number_=pp->line_number_;
-    simple_array_pop_back(acp->stack_);
-  }
-}
-*/
 int a_see_parser_peek_chr(a_see_parser_t* acp)
 {
   int c = *acp->ptr_;
@@ -111,11 +36,6 @@ int a_see_parser_next_chr(a_see_parser_t* acp)
   }
   return c;
 }
-/*
-int a_see_parser_current_chr(a_see_parser_t* acp)
-{
-
-}*/
 
 static const char* whitespace_chars = " \t";
 static const char* whitespace_chars_with_eol = " \t\r\n";
@@ -203,19 +123,6 @@ int a_see_parser_space(a_see_parser_t* acp)
   return 1;
 }
 
-/*
-int a_see_parser_capture(a_see_parser_t* acp,int on_off)
-{
-  if(on_off) {
-    acp->capture_begin_ = acp->ptr_;
-    acp->capture_end_ = NULL;
-  } else {
-    acp->capture_end_ = acp->ptr_;
-  }
-  return 1;
-}
-*/
-
 int a_see_parser_capture_length(a_see_parser_t* acp)
 {
   int len = 0;
@@ -273,26 +180,6 @@ int a_see_parser_range(a_see_parser_t* acp,const char* range)
     A_SEE_PARSER_NEXT_CHR(acp);
   return rc;
 }
-/*
-// < ([0-9]+ ('.' [0-9]*)? [eE] [-+]? [0-9]+) | (// [0-9]* '.' [0-9]+ ([eE] [-+]? [0-9]+)?) >
-int a_see_parser_whole(a_see_parser_t* acp)
-{
-  return A_SEE_PARSER_ONE_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,);
-}
-
-int a_see_parser_fraction(a_see_parser_t* acp)
-{
-  return A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_NEXT_CHR(acp) == '.' && A_SEE_PARSER_ZERO_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,));
-}
-
-int a_see_parser_exponent(a_see_parser_t* acp)
-{
-  int c;
-  return A_SEE_PARSER_SIMPLE_RULE(acp,((c=A_SEE_PARSER_NEXT_CHR(acp))=='e' || c =='E') &&
-      A_SEE_PARSER_OPTIONAL(acp,(c=A_SEE_PARSER_NEXT_CHR(acp))=='+' || c=='-',,) &&
-      A_SEE_PARSER_ONE_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,));
-}
-*/
 
 #define A_SEE_PARSER_EXPONENT  A_SEE_PARSER_RANGE(acp,"eE") && \
   A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_RANGE(acp,"-+"),,) && \
@@ -318,15 +205,17 @@ int a_see_parser_exponent(a_see_parser_t* acp)
 int a_see_parser_floating_point(a_see_parser_t*acp)
 {
 #ifdef __FLOATING_POINT_OPTION_A__
-  return A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT1 &&
-            A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_EXPONENT,,)
-        && (puts("1 succed"),1))
+  return A_SEE_PARSER_CAPTURE_ON(acp) &&
+    (
+        A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT1 &&
+            A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_EXPONENT,,))
       ||
       A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT2 &&
-          A_SEE_PARSER_EXPONENT && (puts("2 succed"),1))
+          A_SEE_PARSER_EXPONENT)
       ||
       A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT3 &&
-          A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_EXPONENT,,));
+          A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_EXPONENT,,))
+    ) && A_SEE_PARSER_CAPTURE_OFF(acp) && A_SEE_PARSER_SPACE(acp);
 
 #else
   int rc=0;

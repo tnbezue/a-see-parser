@@ -103,7 +103,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define A_SEE_PARSER_SPACE(ACP) \
  ({ while(a_see_parser_whitespace(ACP,ACP->flags_&INCLUDE_EOL_IN_WHITESPACE) \
     || a_see_parser_delimited_comment(ACP,"/*","*/",ACP->flags_ & ALLOW_NESTED_COMMENTS)\
-    || a_see_parser_one_line_comment(acp,"//")); 1; })
+    || a_see_parser_one_line_comment(ACP,"//")); 1; })
 
 #define A_SEE_PARSER_CHAR_SEQUENCE(ACP,SEQ) a_see_parser_char_sequence(ACP,SEQ)
 #define A_SEE_PARSER_RANGE(ACP,__RANGE__) a_see_parser_range(ACP,__RANGE__)
@@ -189,6 +189,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define OCTAL_INTEGER(ACP) a_see_parser_octal_integer(ACP)
 #define HEX_INTEGER(ACP)a_see_parser_hex_integer(ACP)
 #define IDENTIFIER(ACP) a_see_parser_ident(ACP)
+#define SPACE(ACP) A_SEE_PARSER_SPACE(ACP)
 #else
 #define DECLARE_DEFAULT_A_SEE_PARSER extern a_see_parser_t* __global_a_see_parser_pointer__
 #define IMPLEMENT_DEFAULT_A_SEE_PARSER static a_see_parser_t __global_a_see_parser_pointer_parser=A_SEE_PARSER_DEFUALT; \
@@ -213,6 +214,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define OCTAL_INTEGER a_see_parser_octal_integer(__global_a_see_parser_pointer__)
 #define HEX_INTEGER a_see_parser_hex_integer(__global_a_see_parser_pointer__)
 #define IDENTIFIER a_see_parser_ident(__global_a_see_parser_pointer__)
+#define SPACE A_SEE_PARSER_SPACE(__global_a_see_parser_pointer__)
 extern a_see_parser_t* __global_a_see_parser_pointer__;
 #endif
 
