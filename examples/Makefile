@@ -1,4 +1,4 @@
-SUBDIRS = demo calculator calculator_ast
+SUBDIRS = demo calculator calculator_ast cparser
 
 .PHONY: subdirs ${SUBDIRS}
 
