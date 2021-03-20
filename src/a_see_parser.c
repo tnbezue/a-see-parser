@@ -20,15 +20,9 @@
 #include <stdio.h>
 #include <ctype.h>
 
-int a_see_parser_peek_chr(a_see_parser_t* acp)
-{
-  int c = *acp->ptr_;
-  return c;
-}
-
 int a_see_parser_next_chr(a_see_parser_t* acp)
 {
-  int c = a_see_parser_peek_chr(acp);
+  int c = A_SEE_PARSER_PEEK_CHR(acp);
   if(c) {
     acp->ptr_++;
     if(c=='\n')
@@ -44,7 +38,7 @@ int a_see_parser_whitespace(a_see_parser_t* acp,int include_new_line_as_whitespa
 {
   const char* ws_chars = include_new_line_as_whitespace ? whitespace_chars_with_eol : whitespace_chars;
   int c,nchar=0;
-  while((c=a_see_parser_peek_chr(acp))) {
+  while((c=A_SEE_PARSER_PEEK_CHR(acp))) {
     if(strchr(ws_chars,c)==NULL)
       break;
     nchar++;

@@ -57,7 +57,7 @@ typedef struct {
 #define INCLUDE_EOL_IN_WHITESPACE 4
 #define CASE_SENSITIVE 8
 
-int a_see_parser_peek_chr(a_see_parser_t*);
+//int a_see_parser_peek_chr(a_see_parser_t*);
 int a_see_parser_next_chr(a_see_parser_t*);
 int a_see_parser_whitespace(a_see_parser_t* acp,int include_new_line_as_whitespace);
 int a_see_parser_eol(a_see_parser_t*);
@@ -97,7 +97,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 
 #define A_SEE_PARSER_RESTORE_STATE(ACP) *ACP = __local_acp__
 
-#define A_SEE_PARSER_PEEK_CHR(ACP) a_see_parser_peek_chr(ACP)
+#define A_SEE_PARSER_PEEK_CHR(ACP) (*ACP->ptr_)
 #define A_SEE_PARSER_NEXT_CHR(ACP) a_see_parser_next_chr(ACP)
 #define A_SEE_PARSER_ANY(ACP) a_see_parser_next_chr(ACP)
 #define A_SEE_PARSER_SPACE(ACP) \
@@ -149,7 +149,15 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
        { cleanup } A_SEE_PARSER_RESTORE_STATE(ACP); break; \
       } \
     } while(1); \
-    __cOuNt__; \
+    __cOuNt__>0; \
+  })
+
+#define A_SEE_PARSER_NON_CONSUMING_RULE(ACP,rule) \
+  ({ \
+    A_SEE_PARSER_SAVE_STATE(ACP);\
+    int __rC__=rule;\
+    A_SEE_PARSER_RESTORE_STATE(ACP);\
+    __rC__;\
   })
 
 #define A_SEE_PARSER_SIMPLE_RULE(ACP,rule) \
@@ -189,6 +197,8 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define OCTAL_INTEGER(ACP) a_see_parser_octal_integer(ACP)
 #define HEX_INTEGER(ACP)a_see_parser_hex_integer(ACP)
 #define IDENTIFIER(ACP) a_see_parser_ident(ACP)
+#define SEQUENCE(ACP,SEQ) a_see_parser_char_sequence(ACP,SEQ)
+#define NON_CONSUMING_RULE(ACP,rule) A_SEE_PARSER_NON_CONSUMING_RULE(ACP,rule)
 #define SPACE(ACP) A_SEE_PARSER_SPACE(ACP)
 #else
 #define DECLARE_DEFAULT_A_SEE_PARSER extern a_see_parser_t* __global_a_see_parser_pointer__
@@ -213,84 +223,12 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define DECIMAL_INTEGER a_see_parser_decimal_integer(__global_a_see_parser_pointer__)
 #define OCTAL_INTEGER a_see_parser_octal_integer(__global_a_see_parser_pointer__)
 #define HEX_INTEGER a_see_parser_hex_integer(__global_a_see_parser_pointer__)
+#define SEQUENCE(SEQ) a_see_parser_char_sequence(__global_a_see_parser_pointer__,SEQ)
 #define IDENTIFIER a_see_parser_ident(__global_a_see_parser_pointer__)
+#define NON_CONSUMING_RULE(rule) A_SEE_PARSER_NON_CONSUMING_RULE(__global_a_see_parser_pointer__,rule)
 #define SPACE A_SEE_PARSER_SPACE(__global_a_see_parser_pointer__)
 extern a_see_parser_t* __global_a_see_parser_pointer__;
 #endif
 
-#if 0
-a_see_parser_t __global_a_see_parser__ = { ptr_=NULL, .capture_begin_ = NULL,
-    capture_end_=NULL, .line_number_=1 ,.flags = A_SEE_PARSER_DEFAULT_FLAGS};
-void a_see_parser_set_string(a_see_parser_t*,const char*);
-
-
-#define NEXT_CHR(ACP) a_see_parser_next_chr(ACP)
-#define PEEK_CHR(ACP) a_see_parser_peek_chr(ACP)
-
-#define RULE(ACP,rule,action,cleanup) \
-  ({ \
-    a_see_parser_rule_start(ACP); \
-    int __rC__ =0; \
-    if(rule) { a_see_parser_rule_success(ACP); __rC__=1; { action }  } \
-     else { { cleanup } a_see_parser_rule_fail(ACP); } \
-    __rC__; \
-  })
-
-#define OPTIONAL(ACP,rule,action,cleanup) \
-  ({ \
-    a_see_parser_rule_start(ACP); \
-    if(rule) { a_see_parser_rule_success(ACP); { action }  } else { { cleanup } a_see_parser_rule_fail(ACP); } \
-    1; \
-  })
-
-#define ZERO_OR_MORE(ACP,rule,action,cleanup) \
-  ({ \
-    do { a_see_parser_rule_start(ACP); \
-      if(rule) { a_see_parser_rule_success(ACP); { action } } \
-      else { { cleanup} a_see_parser_rule_fail(ACP); break; } \
-    } while(1); \
-    1; \
-  })
-
-#define ONE_OR_MORE(ACP,rule,action,cleanup) \
-  ({\
-    int __cOuNt__=0;\
-    do { a_see_parser_rule_start(ACP); \
-      if(rule) { \
-        __cOuNt__++; a_see_parser_rule_success(ACP); \
-        { action } \
-      } else { \
-        a_see_parser_rule_fail(ACP); \
-       { cleanup } break; \
-      } \
-    } while(1); \
-    __cOuNt__; \
-  })
-
-#define SEQUENCE(ACP,seq) a_see_parser_char_sequence(ACP,seq)
-
-#define END_OF_LINE(ACP) a_see_parser_eol(ACP)
-
-#define END_OF_INPUT(ACP) SIMPLE_RULE(NEXT_CHR(ACP) == 0)
-/*
-  A simple rule is same as RULE except action and clearnup not required
-*/
-#define SIMPLE_RULE(ACP,rule) \
-      (a_see_parser_rule_start(ACP),(rule) ? (a_see_parser_rule_success(ACP),1) : (a_see_parser_rule_fail(ACP),0))
-
-#define NON_CONSUMING_RULE(ACP,rule) \
-  ({ \
-    a_see_parser_rule_start(ACP);\
-    int __rC__=rule;\
-    a_see_parser_rule_fail(ACP);\
-    __rC__;\
-  })
-
-#define RANGE(ACP,str) a_see_parser_range(acp,str)
-#define CAPTURE_ON(ACP) a_see_parser_capture(ACP,1)
-#define CAPTURE_OFF(ACP) a_see_parser_capture(ACP,0)
-#define CAPTURE_TEXT(ACP) a_see_parser_capture_text(ACP)
-#define YYTEXT(ACP)  a_see_parser_capture_text(ACP)
-#endif
 
 #endif
