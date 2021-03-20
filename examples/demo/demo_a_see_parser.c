@@ -26,13 +26,13 @@
 #include <math.h>
 #include <a_see_parser/a_see_parser.h>
 
-/*
-#define PLUS NEXT_CHR() == '+'
-#define MINUS NEXT_CHR('-')
-#define TIMES) NEXT_CHR('*')
-#define DIVIDE NEXT_CHR('/')
-#define POWER) NEXT_CHR('^')
-*/
+
+#define PLUS ((PEEK_CHR == '+' && NEXT_CHR) && SPACE)
+#define MINUS ((PEEK_CHR == '-' && NEXT_CHR) && SPACE)
+#define TIMES ((PEEK_CHR == '*' && NEXT_CHR) && SPACE)
+#define DIVIDE ((PEEK_CHR == '/' && NEXT_CHR) && SPACE)
+#define POWER ((PEEK_CHR == '^' && NEXT_CHR) && SPACE)
+
 
 int expr();
 int term();
@@ -46,31 +46,30 @@ int variable();
 // Success if all tokens consumed
 int expr()
 {
-  return term() && !ANY;
+  return SPACE && term() && !ANY;
 }
 
 //  term = factor ( ( '+' | '-' ) factor )*
 int term()
 {
-  int c;
+//  int c;
   return factor() &&
-    ZERO_OR_MORE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,);
+    ZERO_OR_MORE((PLUS || MINUS) && factor(),,);
 }
 
 //  factor = ( ('+' | '-' ) factor ) | ( power ( ( '*' | '/' ) power)* )
 int factor()
 {
-  int c;
-  return RULE(((c=NEXT_CHR) == '+' || c == '-') && factor(),,)
+  return RULE((PLUS || MINUS) && factor(),,)
   ||
   (power() &&
-        ZERO_OR_MORE(((c=NEXT_CHR) == '*' || c == '/') && power(),,));
+        ZERO_OR_MORE((TIMES || DIVIDE) && power(),,));
 }
 
 //  power = value ( '^' power )*
 int power()
 {
-  return value() && ZERO_OR_MORE(NEXT_CHR == '^' && power(),,);
+  return value() && ZERO_OR_MORE(POWER && power(),,);
 }
 
 //  value = number | '(' term ')' | function | variable
@@ -85,7 +84,7 @@ int value()
     variable();
 }
 
-#define INTEGER (DECIMAL_INTEGER || OCTAL_INTEGER || HEX_INTEGER)
+#define INTEGER (DECIMAL_INTEGER || HEX_INTEGER || OCTAL_INTEGER)
 // number <- REAL / INTEGER
 int number()
 {
