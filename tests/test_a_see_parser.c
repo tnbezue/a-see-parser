@@ -88,38 +88,6 @@ void test_cpp_comment()
   }
 }
 
-typedef struct {
-  const char* range;
-  const char* str;
-  int found;
-} string_string_int_t;
-void test_range()
-{
-  string_string_int_t test_data[] = {
-    { "-a-zA-Z0-9","-12",1 },
-    { "-a-zA-Z0-9","12",1 },
-    { "aBcDeFgHiJkLmNoPqRsTuVwXyZ","i12",1 },
-    { "-a-zA-Z0-9","Kay",1 },
-    { "-a-zA-Z0-9","+54",0 },
-    { "aBcDeFgHiJkLmNoPqRsTuVwXyZ","33",0 },
-    { NULL, NULL, 0}
-  };
-  TESTCASE("Range");
-  char msg[128];
-  string_string_int_t* issi = test_data;
-  for(;issi->range;issi++) {
-    SET_PARSE_STRING(issi->str);
-    if(issi->found) {
-      sprintf(msg,"Next char from \"%s\" found in \"%s\"",issi->str,issi->range);
-      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range));
-    } else {
-      sprintf(msg,"Next char from \"%s\" not found in \"%s\"",issi->str,issi->range);
-      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range)==0);
-    }
-  }
-}
-
-
 void test_integer()
 {
   string_length_t test_data[] = {
@@ -252,17 +220,267 @@ void test_quoted_string()
   }
 }
 
+void test_next_chr()
+{
+  TESTCASE("NEXT_CHR");
+  char msg[128];
+  int test_data[] = { 'a','b','c',0,0,0};
+  int n = ARRAY_SIZE(test_data);
+  const char* str = "abc";
+  SET_PARSE_STRING(str);
+  int i;
+  for(i=0;i<n;i++) {
+    if(test_data[i])
+      sprintf(msg,"NEXT_CHR is '%c'",test_data[i]);
+    else
+      sprintf(msg,"NEXT_CHR is end of string");
+    TEST(msg,NEXT_CHR == test_data[i]);
+  }
+}
+
+void test_peek_chr()
+{
+  TESTCASE("PEEK_CHR");
+  char msg[128];
+  int test_data[] = { 'a','b','c',0,0,0};
+  int n = ARRAY_SIZE(test_data);
+  const char* str = "abc";
+  SET_PARSE_STRING(str);
+  int i;
+  for(i=0;i<n;i++) {
+    if(test_data[i])
+      sprintf(msg,"PEEK_CHR is '%c'",test_data[i]);
+    else
+      sprintf(msg,"PEEK_CHR is end of string");
+    TEST(msg,PEEK_CHR == test_data[i]);
+    NEXT_CHR;
+  }
+}
+
+typedef struct {
+  const char* range;
+  const char* str;
+  int found;
+} string_string_int_t;
+void test_range()
+{
+  string_string_int_t test_data[] = {
+    { "-a-zA-Z0-9","-12",1 },
+    { "-a-zA-Z0-9","12",1 },
+    { "aBcDeFgHiJkLmNoPqRsTuVwXyZ","i12",1 },
+    { "-a-zA-Z0-9","Kay",1 },
+    { "-a-zA-Z0-9","+54",0 },
+    { "aBcDeFgHiJkLmNoPqRsTuVwXyZ","33",0 },
+    { NULL, NULL, 0}
+  };
+  TESTCASE("Range");
+  char msg[128];
+  string_string_int_t* issi = test_data;
+  for(;issi->range;issi++) {
+    SET_PARSE_STRING(issi->str);
+    if(issi->found) {
+      sprintf(msg,"Next char from \"%s\" found in \"%s\"",issi->str,issi->range);
+      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range));
+    } else {
+      sprintf(msg,"Next char from \"%s\" not found in \"%s\"",issi->str,issi->range);
+      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range)==0);
+    }
+  }
+}
+
+void test_not_range()
+{
+  string_string_int_t test_data[] = {
+    { "^A-Z","12",1 },
+    { "^0-9","12",0 },
+    { "^aBcDeFgHiJkLmNoPqRsTuVwXyZ","i12",0 },
+    { "^-a-zA-Z0-9","Kay",0 },
+    { "^-a-zA-Z0-9","+54",1 },
+    { "^aBcDeFgHiJkLmNoPqRsTuVwXyZ","33",1 },
+    { NULL, NULL, 0}
+  };
+  TESTCASE("Range");
+  char msg[128];
+  string_string_int_t* issi = test_data;
+  for(;issi->range;issi++) {
+    SET_PARSE_STRING(issi->str);
+    if(issi->found) {
+      sprintf(msg,"Next char from \"%s\" not found in \"%s\"",issi->str,issi->range);
+      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range));
+    } else {
+      sprintf(msg,"Next char from \"%s\" found in \"%s\"",issi->str,issi->range);
+      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range)==0);
+    }
+  }
+}
+
+void test_sequence()
+{
+  string_string_int_t test_data[] = {
+    { "abc","abcdefg",1 },
+    { "abc","hijklmn",0 },
+    { "o","opqrstu",1 },
+    { "vwxyz01","vwxyz01",1 },
+    { "345","2345678",0 },
+    { NULL, NULL, 0}
+  };
+  TESTCASE("Sequence");
+  char msg[128];
+  string_string_int_t* issi = test_data;
+  for(;issi->range;issi++) {
+    SET_PARSE_STRING(issi->str);
+    if(issi->found) {
+      sprintf(msg,"Sequence \"%s\" found in  \"%s\"",issi->range,issi->str);
+      TEST(msg,SEQUENCE(issi->range));
+    } else {
+      sprintf(msg,"Sequence \"%s\" not found in  \"%s\"",issi->range,issi->str);
+      TEST(msg,SEQUENCE(issi->range)==0);
+    }
+  }
+}
+
+int simple_rule_test_1(int ch)
+{
+  return SIMPLE_RULE(NEXT_CHR == ch);
+}
+
+void test_simple_rule()
+{
+  TESTCASE("SIMPLE RULE");
+  const char* str = "abc";
+  SET_PARSE_STRING(str);
+  int rc = simple_rule_test_1('b');
+  TEST("Simple rule NEXT_CHR in \"abc\" equals 'b' fails",rc == 0 && __global_a_see_parser_pointer__->ptr_==str);
+  rc = simple_rule_test_1('a');
+  TEST("Simple rule NEXT_CHR in \"abc\" equals 'a' succeeds",rc == 1 && __global_a_see_parser_pointer__->ptr_==(str+1));
+}
+
+int true_false=0;
+int rule_test_1(int ch)
+{
+  return RULE(NEXT_CHR==ch,true_false=1;,true_false=0;);
+}
+
+void test_rule()
+{
+  TESTCASE("RULE");
+  const char* str = "abc";
+  SET_PARSE_STRING(str);
+  int rc = rule_test_1('b');
+  TEST("Rule NEXT_CHR in \"abc\" equals 'b' fails",rc == 0 && __global_a_see_parser_pointer__->ptr_==str && true_false == 0);
+  rc = rule_test_1('a');
+  TEST("Rule NEXT_CHR in \"abc\" equals 'a' succeeds",rc == 1 && __global_a_see_parser_pointer__->ptr_==(str+1) && true_false == 1);
+}
+
+int count=0;
+int zero_or_more_test_1(int ch)
+{
+  return ZERO_OR_MORE(NEXT_CHR==ch,count++;,);
+}
+
+typedef struct {
+  int chr;
+  int count;
+} int_int_t;
+
+void test_zero_or_more()
+{
+  TESTCASE("ZERO OR MORE");
+  int_int_t test_data[] = {
+    {'a',0},
+    {'b',3},
+    {'c',2},
+    {'d',0},
+    {'e',4}
+  };
+  char msg[128];
+  int n = ARRAY_SIZE(test_data);
+  const char* str = "bbbcceeee";
+  SET_PARSE_STRING(str);
+  int i;
+  for(i=0;i<n;i++) {
+    count = 0;
+    sprintf(msg,"Find %d of '%c'",test_data[i].count,test_data[i].chr);
+    TEST(msg,zero_or_more_test_1(test_data[i].chr) && count == test_data[i].count);
+  }
+}
+
+int one_or_more_test_1(int ch)
+{
+  return ONE_OR_MORE(NEXT_CHR==ch,count++;,);
+}
+
+void test_one_or_more()
+{
+  TESTCASE("ONE OR MORE");
+  int_int_t test_data[] = {
+    {'a',0},
+    {'b',3},
+    {'c',2},
+    {'d',0},
+    {'e',4}
+  };
+  char msg[128];
+  int n = ARRAY_SIZE(test_data);
+  const char* str = "bbbcceeee";
+  SET_PARSE_STRING(str);
+  int i;
+  for(i=0;i<n;i++) {
+    count = 0;
+    sprintf(msg,"Find %d of '%c'",test_data[i].count,test_data[i].chr);
+    TEST(msg,one_or_more_test_1(test_data[i].chr) == (test_data[i].count>0) && count == test_data[i].count);
+  }
+}
+
+int optional_1(int ch)
+{
+  return OPTIONAL(NEXT_CHR==ch,true_false=1;,true_false=0;);
+}
+
+void test_optional()
+{
+  TESTCASE("OPTIONAL");
+  const char* str = "abc";
+  SET_PARSE_STRING(str);
+  TEST("Optional NEXT_CHR 'b' in \"abc\"",optional_1('b') && __global_a_see_parser_pointer__->ptr_==str && true_false == 0);
+  TEST("Optional NEXT_CHR 'a' in \"abc\"",optional_1('a') && __global_a_see_parser_pointer__->ptr_==(str+1) && true_false == 1);
+}
+
+int non_consuming_test_1(int ch)
+{
+  return NON_CONSUMING_RULE(ZERO_OR_MORE(NEXT_CHR == ch,count++;,));
+}
+
+void test_non_consuming_rule()
+{
+  TESTCASE("Non consuming");
+  const char* str = "aaaaa";
+  SET_PARSE_STRING(str);
+  TEST("5 characters consummed and pointer remains at beginning of string",
+      non_consuming_test_1('a') && count == 5 && __global_a_see_parser_pointer__->ptr_==str);
+}
+
 test_function tests[] =
 {
   test_default,
   test_c_comment,
   test_cpp_comment,
-  test_range,
   test_integer,
   test_octal_integer,
   test_hex_integer,
   test_floating_point,
   test_quoted_string,
+  test_range,
+  test_not_range,
+  test_next_chr,
+  test_peek_chr,
+  test_simple_rule,
+  test_sequence,
+  test_rule,
+  test_zero_or_more,
+  test_one_or_more,
+  test_optional,
+  test_non_consuming_rule,
 };
 
 TEST_MAIN(tests)
