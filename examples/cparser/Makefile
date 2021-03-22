@@ -1,8 +1,8 @@
 CC ?= gcc
 LD = ${CC}
 TARGETS=cparser
-CFLAGS=-g -I../../include -Wall
-LDFLAGS=-g
+CFLAGS+=-g -I../../include -Wall
+LDFLAGS+=-g
 CPARSER_OBJECTS=cparser.o ../../src/a_see_parser.o
 
 all: ${TARGETS}

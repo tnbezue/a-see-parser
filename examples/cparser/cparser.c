@@ -1,3 +1,26 @@
+
+/*
+		Copyright (C) 2021  by Terry N Bezue
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/*
+  The PEG grammar presented here is from
+  https://github.com/pointlander/peg/blob/master/grammars/c/c.peg
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <a_see_parser/a_see_parser.h>
@@ -5,77 +28,72 @@
 DECLARE_DEFAULT_A_SEE_PARSER;
 IMPLEMENT_DEFAULT_A_SEE_PARSER;
 
-#define id_char RANGE("_a-zA-Z0-9")
-#define id_nondigit RANGE("_a-zA-Z")
+#define ID_CHAR RANGE("_a-zA-Z0-9")
+#define ID_NONDIGIT RANGE("_a-zA-Z")
 
-#define AUTO (SEQUENCE("auto") && !id_char && SPACE)
-#define BREAK (SEQUENCE("break") && !id_char && SPACE)
-#define CASE (SEQUENCE("case") && !id_char && SPACE)
-#define CHAR (SEQUENCE("char") && !id_char && SPACE)
-#define CONST (SEQUENCE("const") && !id_char && SPACE)
-#define CONTINUE (SEQUENCE("continue") && !id_char && SPACE)
-#define DEFAULT (SEQUENCE("default") && !id_char && SPACE)
-#define DOUBLE (SEQUENCE("double") && !id_char && SPACE)
-#define DO (SEQUENCE("do") && !id_char && SPACE)
-#define ELSE (SEQUENCE("else") && !id_char && SPACE)
-#define ENUM (SEQUENCE("enum") && !id_char && SPACE)
-#define EXTERN (SEQUENCE("extern") && !id_char && SPACE)
-#define FLOAT (SEQUENCE("float") && !id_char && SPACE)
-#define FOR (SEQUENCE("for") && !id_char && SPACE)
-#define GOTO (SEQUENCE("goto") && !id_char && SPACE)
-#define IF (SEQUENCE("if") && !id_char && SPACE)
-#define INT (SEQUENCE("int") && !id_char && SPACE)
-#define INLINE (SEQUENCE("inline") && !id_char && SPACE)
-#define LONG (SEQUENCE("long") && !id_char && SPACE)
-#define REGISTER (SEQUENCE("register") && !id_char && SPACE)
-#define RESTRICT (SEQUENCE("restrict") && !id_char && SPACE)
-#define RETURN (SEQUENCE("return") && !id_char && SPACE)
-#define SHORT (SEQUENCE("short") && !id_char && SPACE)
-#define SIGNED (SEQUENCE("signed") && !id_char && SPACE)
-#define SIZEOF (SEQUENCE("sizeof") && !id_char && SPACE)
-#define STATIC (SEQUENCE("static") && !id_char && SPACE)
-#define STRUCT (SEQUENCE("struct") && !id_char && SPACE)
-#define SWITCH (SEQUENCE("switch") && !id_char && SPACE)
-#define TYPEDEF (SEQUENCE("typedef") && !id_char && SPACE)
-#define UNION (SEQUENCE("union") && !id_char && SPACE)
-#define UNSIGNED (SEQUENCE("unsigned") && !id_char && SPACE)
-#define VOID (SEQUENCE("void") && !id_char && SPACE)
-#define VOLATILE (SEQUENCE("volatile") && !id_char && SPACE)
-#define WHILE (SEQUENCE("while") && !id_char && SPACE)
-#define BOOL (SEQUENCE("_Bool") && !id_char && SPACE)
-#define COMPLEX (SEQUENCE("_Complex") && !id_char && SPACE)
-#define IMAGINARY (SEQUENCE("_Imaginary") && !id_char && SPACE)
-#define STDCALL (SEQUENCE("_stdcall") && !id_char && SPACE)
-#define DECLSPEC (SEQUENCE("__declspec") && !id_char && SPACE)
-#define ATTRIBUTE (SEQUENCE("__attribute__") && !id_char && SPACE)
-#define ATTRIBUTE (SEQUENCE("__attribute__") && !id_char && SPACE)
+#define AUTO (SEQUENCE("auto") && !ID_CHAR && SPACE)
+#define BREAK (SEQUENCE("break") && !ID_CHAR && SPACE)
+#define CASE (SEQUENCE("case") && !ID_CHAR && SPACE)
+#define CHAR (SEQUENCE("char") && !ID_CHAR && SPACE)
+#define CONST (SEQUENCE("const") && !ID_CHAR && SPACE)
+#define CONTINUE (SEQUENCE("continue") && !ID_CHAR && SPACE)
+#define DEFAULT (SEQUENCE("default") && !ID_CHAR && SPACE)
+#define DOUBLE (SEQUENCE("double") && !ID_CHAR && SPACE)
+#define DO (SEQUENCE("do") && !ID_CHAR && SPACE)
+#define ELSE (SEQUENCE("else") && !ID_CHAR && SPACE)
+#define ENUM (SEQUENCE("enum") && !ID_CHAR && SPACE)
+#define EXTERN (SEQUENCE("extern") && !ID_CHAR && SPACE)
+#define FLOAT (SEQUENCE("float") && !ID_CHAR && SPACE)
+#define FOR (SEQUENCE("for") && !ID_CHAR && SPACE)
+#define GOTO (SEQUENCE("goto") && !ID_CHAR && SPACE)
+#define IF (SEQUENCE("if") && !ID_CHAR && SPACE)
+#define INT (SEQUENCE("int") && !ID_CHAR && SPACE)
+#define INLINE (SEQUENCE("inline") && !ID_CHAR && SPACE)
+#define LONG (SEQUENCE("long") && !ID_CHAR && SPACE)
+#define REGISTER (SEQUENCE("register") && !ID_CHAR && SPACE)
+#define RESTRICT (SEQUENCE("restrict") && !ID_CHAR && SPACE)
+#define RETURN (SEQUENCE("return") && !ID_CHAR && SPACE)
+#define SHORT (SEQUENCE("short") && !ID_CHAR && SPACE)
+#define SIGNED (SEQUENCE("signed") && !ID_CHAR && SPACE)
+#define SIZEOF (SEQUENCE("sizeof") && !ID_CHAR && SPACE)
+#define STATIC (SEQUENCE("static") && !ID_CHAR && SPACE)
+#define STRUCT (SEQUENCE("struct") && !ID_CHAR && SPACE)
+#define SWITCH (SEQUENCE("switch") && !ID_CHAR && SPACE)
+#define TYPEDEF (SEQUENCE("typedef") && !ID_CHAR && SPACE)
+#define UNION (SEQUENCE("union") && !ID_CHAR && SPACE)
+#define UNSIGNED (SEQUENCE("unsigned") && !ID_CHAR && SPACE)
+#define VOID (SEQUENCE("void") && !ID_CHAR && SPACE)
+#define VOLATILE (SEQUENCE("volatile") && !ID_CHAR && SPACE)
+#define WHILE (SEQUENCE("while") && !ID_CHAR && SPACE)
+#define BOOL (SEQUENCE("_Bool") && !ID_CHAR && SPACE)
+#define COMPLEX (SEQUENCE("_Complex") && !ID_CHAR && SPACE)
+#define IMAGINARY (SEQUENCE("_Imaginary") && !ID_CHAR && SPACE)
+#define STDCALL (SEQUENCE("_stdcall") && !ID_CHAR && SPACE)
+#define DECLSPEC (SEQUENCE("__declspec") && !ID_CHAR && SPACE)
+#define ATTRIBUTE (SEQUENCE("__attribute__") && !ID_CHAR && SPACE)
 
-#define NEXT_SEQUENCE_IS(SEQ) SEQUENCE(SEQ)
-#define NEXT_CHR_IS(CH) ((PEEK_CHR == CH) && NEXT_CHR)
-//#define NEXT_CHR_IS_NOT(CH) (PEEK_CHR != CH)
-
-#define ELLIPSIS (NEXT_SEQUENCE_IS("...") && SPACE)
-#define LEFTEQU (NEXT_SEQUENCE_IS("<<=") && SPACE)
-#define RIGHTEQU (NEXT_SEQUENCE_IS(">>=") && SPACE)
-#define PTR (NEXT_SEQUENCE_IS("->") && SPACE)
-#define INC (NEXT_SEQUENCE_IS("++") && SPACE)
-#define DEC (NEXT_SEQUENCE_IS("--") && SPACE)
-#define LEFT (NEXT_SEQUENCE_IS("<<") && SPACE)
-#define RIGHT (NEXT_SEQUENCE_IS(">>") && SPACE)
-#define LE (NEXT_SEQUENCE_IS("<=") && SPACE)
-#define GE (NEXT_SEQUENCE_IS(">=") && SPACE)
-#define EQUEQU (NEXT_SEQUENCE_IS("==") && SPACE)
-#define BANGEQU (NEXT_SEQUENCE_IS("!=") && SPACE)
-#define ANDAND (NEXT_SEQUENCE_IS("&&") && SPACE)
-#define OROR (NEXT_SEQUENCE_IS("||") && SPACE)
-#define STAREQU (NEXT_SEQUENCE_IS("*=") && SPACE)
-#define DIVEQU (NEXT_SEQUENCE_IS("/=") && SPACE)
-#define MODEQU (NEXT_SEQUENCE_IS("%=") && SPACE)
-#define PLUSEQU (NEXT_SEQUENCE_IS("+=") && SPACE)
-#define MINUSEQU (NEXT_SEQUENCE_IS("-=") && SPACE)
-#define ANDEQU (NEXT_SEQUENCE_IS("&=") && SPACE)
-#define HATEQU (NEXT_SEQUENCE_IS("^=") && SPACE)
-#define OREQU (NEXT_SEQUENCE_IS("|=") && SPACE)
+#define ELLIPSIS (SEQUENCE("...") && SPACE)
+#define LEFTEQU (SEQUENCE("<<=") && SPACE)
+#define RIGHTEQU (SEQUENCE(">>=") && SPACE)
+#define PTR (SEQUENCE("->") && SPACE)
+#define INC (SEQUENCE("++") && SPACE)
+#define DEC (SEQUENCE("--") && SPACE)
+#define LEFT (SEQUENCE("<<") && SPACE)
+#define RIGHT (SEQUENCE(">>") && SPACE)
+#define LE (SEQUENCE("<=") && SPACE)
+#define GE (SEQUENCE(">=") && SPACE)
+#define EQUEQU (SEQUENCE("==") && SPACE)
+#define BANGEQU (SEQUENCE("!=") && SPACE)
+#define ANDAND (SEQUENCE("&&") && SPACE)
+#define OROR (SEQUENCE("||") && SPACE)
+#define STAREQU (SEQUENCE("*=") && SPACE)
+#define DIVEQU (SEQUENCE("/=") && SPACE)
+#define MODEQU (SEQUENCE("%=") && SPACE)
+#define PLUSEQU (SEQUENCE("+=") && SPACE)
+#define MINUSEQU (SEQUENCE("-=") && SPACE)
+#define ANDEQU (SEQUENCE("&=") && SPACE)
+#define HATEQU (SEQUENCE("^=") && SPACE)
+#define OREQU (SEQUENCE("|=") && SPACE)
 #define LBRK (NEXT_CHR_IS('[') && SPACE)
 #define RBRK (NEXT_CHR_IS(']') && SPACE)
 #define LPAR (NEXT_CHR_IS('(') && SPACE)
@@ -109,7 +127,6 @@ int translation_unit();
 int external_declaration();
 int function_definition();
 int declaration();
-int declaration_specifiers();
 int declarator();
 int declaration_list();
 int compound_statement();
@@ -190,12 +207,10 @@ int ();
 int ();
 int ();*/
 
-#define TN cparser
-
 // TranslationUnit <- Spacing ( ExternalDeclaration / SEMI ) * EOT
 int translation_unit()
 {
-  return SPACE && RULE(external_declaration() || SEMI,,) && EOT;
+  return SPACE && RULE(ZERO_OR_MORE(external_declaration() || SEMI,,),,) && EOT;
 }
 
 // ExternalDeclaration <- FunctionDefinition / Declaration
@@ -277,11 +292,10 @@ StorageClassSpecifier
     / REGISTER
     / ATTRIBUTE LPAR LPAR (!RPAR .)* RPAR RPAR
 */
-int STRING_UNTIL(const char* str) { ((void)str); return 1; }
 int storage_class_specifier()
 {
-  return RULE( TYPEDEF || EXTERN || STATIC || AUTO || REGISTER ||
-    (ATTRIBUTE && LPAR && LPAR && STRING_UNTIL("}") && RPAR && RPAR),,);
+  return RULE( TYPEDEF  || EXTERN || STATIC || AUTO || REGISTER ||
+    (ATTRIBUTE && LPAR && LPAR && ZERO_OR_MORE(!NEXT_CHR_IS(')') && ANY,,) && RPAR && RPAR),,);
 }
 /*
 TypeSpecifier
@@ -365,7 +379,8 @@ StructDeclarator
 */
 int struct_declarator()
 {
-  return RULE(OPTIONAL(declarator(),,) && COLON && constant_expression(),,);
+  return RULE(OPTIONAL(declarator(),,) && COLON && constant_expression(),,)
+  || declarator();
 }
 
 /*
@@ -463,19 +478,19 @@ int direct_declarator_4()
 // LPAR ParameterTypeList RPAR
 int direct_declarator_5()
 {
-  return RULE(LBRK && parameter_type_list() && RBRK,,);
+  return RULE(LPAR && parameter_type_list() && RPAR,,);
 }
 
 // LPAR IdentifierList? RPAR
 int direct_declarator_6()
 {
-  return RULE(LBRK && OPTIONAL(identifier_list(),,) && RBRK,,);
+  return RULE(LPAR && OPTIONAL(identifier_list(),,) && RPAR,,);
 }
 
 int direct_declarator()
 {
   return RULE((identifier() ||
-    (LPAR && declarator() && RPAR))
+    (LPAR && ACP_TRACE_RULE(fputs("Got Lpar",stderr);) && declarator() && RPAR))
   && ZERO_OR_MORE(direct_declarator_1() || direct_declarator_2()
      || direct_declarator_3() || direct_declarator_4()
      || direct_declarator_5() || direct_declarator_6(),,),,);
@@ -1012,7 +1027,7 @@ int string_literal()
 // Identifier <- !Keyword IdNondigit IdChar* Spacing #{}
 int identifier()
 {
-  return RULE(!keyword() && id_nondigit && ZERO_OR_MORE(id_char,,) && SPACE,,);
+  return RULE(!keyword() && ID_NONDIGIT && ZERO_OR_MORE(ID_CHAR,,) && SPACE,,);
 }
 
 /*
@@ -1040,7 +1055,7 @@ IntegerConstant
 int integer_constant()
 {
   return RULE((decimal_constant() || hex_constant() || octal_constant())
-        && OPTIONAL(integer_suffix(),,),,);
+        && OPTIONAL(integer_suffix(),,) && SPACE,,);
 }
 
 //DecimalConstant <- [1-9][0-9]*
@@ -1060,6 +1075,7 @@ int hex_constant()
 {
   return RULE(HEX_PREFIX && ONE_OR_MORE(HEX_DIGIT,,),,);
 }
+
 /*
 IntegerSuffix
    <- [uU] Lsuffix?
@@ -1071,7 +1087,6 @@ int integer_suffix()
     ||
       RULE(LSUFFIX && OPTIONAL(RANGE("uU"),,),,);
 }
-
 
 /*
 FloatConstant
@@ -1085,19 +1100,31 @@ int float_constant()
   return RULE((decimal_float_constant() || hex_float_constant())
       && OPTIONAL(FLOAT_SUFFIX,,),,) && SPACE;
 }
-
+/*
+DecimalFloatConstant
+   <- Fraction Exponent?
+    / [0-9]+ Exponent
+*/
 int decimal_float_constant()
 {
   return RULE((fraction() && OPTIONAL(exponent(),,))
     || (ONE_OR_MORE(RANGE("0-9"),,) && exponent()),,);
 }
 
+/*HexFloatConstant
+   <- HexPrefix HexFraction BinaryExponent?
+    / HexPrefix HexDigit+ BinaryExponent
+*/
 int hex_float_constant()
 {
   return RULE(HEX_PREFIX && hex_fraction() && OPTIONAL(binary_exponent(),,),,)
     || RULE(HEX_PREFIX && ONE_OR_MORE(HEX_DIGIT,,) && binary_exponent(),,);
 }
-
+/*
+Fraction
+   <- [0-9]* '.' [0-9]+
+    / [0-9]+ '.'
+*/
 int fraction()
 {
   return RULE(ZERO_OR_MORE(RANGE("0-9"),,) &&  NEXT_CHR_IS('.') && ONE_OR_MORE(RANGE("0-9"),,),,)
@@ -1117,7 +1144,6 @@ int hex_fraction()
 }
 
 //Exponent <- [eE][+\-]? [0-9]+
-
 int exponent()
 {
   return RULE(RANGE("eE") && OPTIONAL(RANGE("-+"),,) && ONE_OR_MORE(RANGE("0-9"),,),,);
@@ -1222,7 +1248,7 @@ int keyword() {
       SEQUENCE("__declspec") ||
       SEQUENCE("__attribute__") ||
       SEQUENCE("__attribute__")
-    ) && !id_char
+    ) && !ID_CHAR
   );
 }
 
@@ -1234,6 +1260,5 @@ int main(int argc,char* argv[])
     puts("Good");
   else {
     puts("BAD");
-    puts(__global_a_see_parser_pointer__->ptr_);
   }
 }
