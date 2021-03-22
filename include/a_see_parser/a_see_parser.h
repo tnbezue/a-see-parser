@@ -19,27 +19,6 @@
 #define __A_SEE_PARSER_INCLUDED__
 
 #include <stdlib.h>
-#if 0
-typedef struct {
-  char* text_;
-  unsigned int length_;
-} dynamic_string_t;
-
-void dynamic_string_ctor(dynamic_string_t* ds);
-void dynamic_string_dtor(dynamic_string_t* ds);
-#define new_dynamic_string() NEW(dynamic_string_t,dynamic_string_ctor)
-#define delete_dynamic_string(ds) DELETE(ds,dynamic_string_dtor)
-
-void dynamic_string_set(dynamic_string_t*,const char*,unsigned int);
-typedef unsigned int a_see_parser_size_t;
-
-typedef struct {
-  const char* ptr_;
-  a_see_parser_size_t line_number_;
-} a_see_parser_position_t;
-
-void a_see_parser_position_init(a_see_parser_position_t* acp);
-#endif
 
 typedef struct {
   const char* begin_;
@@ -82,9 +61,26 @@ int a_see_parser_capture(a_see_parser_t*,int);
 int a_see_parser_capture_length(a_see_parser_t*);
 int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 
+#ifdef A_SEE_PARSER_TRACE
+#define acp_trace if(1)
+#define ACP_TRACE_RULE(code)  ({ {code} 1; })
+#define a_see_parser_trace_info(ACP,RULE_NAME,STATUS) \
+  fprintf(stderr,"%-8s %-30.30s %-20s %.30s\n",STATUS,__func__,# RULE_NAME,ACP->ptr_)
+#define a_see_parser_trace_info_enter(ACP,RULE_NAME) a_see_parser_trace_info(ACP,RULE_NAME,"")
+#define a_see_parser_trace_info_success(ACP,RULE_NAME) a_see_parser_trace_info(ACP,RULE_NAME,"Success ")
+#define a_see_parser_trace_info_fail(ACP,RULE_NAME) a_see_parser_trace_info(ACP,RULE_NAME,"Fail ")
+#else
+#define acp_trace if(0)
+#define ACP_TRACE_RULE(code) (1)
+#define a_see_parser_trace_info_enter(ACP,RULE_NAME)
+#define a_see_parser_trace_info_success(ACP,RULE_NAME)
+#define a_see_parser_trace_info_fail(ACP,RULE_NAME)
+#endif
+
 #define A_SEE_PARSER_SET_PARSE_STRING(ACP,str) ACP->ptr_=str
 
 #define A_SEE_PARSER_SAVE_STATE(ACP) a_see_parser_t __local_acp__ = *ACP;
+#define A_SEE_PARSER_RESTORE_STATE(ACP) *ACP = __local_acp__
 
 #define A_SEE_PARSER_CAPTURE_ON(ACP) (ACP->capture_.begin_=ACP->ptr_,1)
 #define A_SEE_PARSER_CAPTURE_OFF(ACP) (ACP->capture_.end_=ACP->ptr_,1)
@@ -95,10 +91,9 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 //#define A_SEE_PARSET_CAPTURE_TEXT(ACP->capture_,STR,LEN) a_see_parser_capture_text(ACP->capture_,STR,LEN)
 #define A_SEE_PARSER_CAPTURE_TEXT(ACP,STR,LEN) a_see_parser_capture_text(ACP,STR,LEN)
 
-#define A_SEE_PARSER_RESTORE_STATE(ACP) *ACP = __local_acp__
-
 #define A_SEE_PARSER_PEEK_CHR(ACP) (*ACP->ptr_)
 #define A_SEE_PARSER_NEXT_CHR(ACP) a_see_parser_next_chr(ACP)
+#define A_SEE_PARSER_NEXT_CHR_IS(ACP,CH) ((A_SEE_PARSER_PEEK_CHR(ACP) == CH) && A_SEE_PARSER_NEXT_CHR(ACP))
 #define A_SEE_PARSER_ANY(ACP) a_see_parser_next_chr(ACP)
 #define A_SEE_PARSER_SPACE(ACP) \
  ({ while(a_see_parser_whitespace(ACP,ACP->flags_&INCLUDE_EOL_IN_WHITESPACE) \
@@ -113,25 +108,27 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define A_SEE_PARSER_RULE(ACP,rule,action,cleanup) \
   ({ \
     A_SEE_PARSER_SAVE_STATE(ACP); \
+    a_see_parser_trace_info_enter(ACP,RULE); \
     int __rC__ =0; \
-    if(rule) {  __rC__=1; { action }  } \
-     else { { cleanup } A_SEE_PARSER_RESTORE_STATE(ACP); } \
+    if(rule) {  __rC__=1; { action } a_see_parser_trace_info_success(ACP,RULE); } \
+     else { { cleanup } a_see_parser_trace_info_fail(ACP,RULE); A_SEE_PARSER_RESTORE_STATE(ACP); } \
     __rC__; \
   })
 
 #define A_SEE_PARSER_OPTIONAL(ACP,rule,action,cleanup) \
   ({ \
-    A_SEE_PARSER_SAVE_STATE(ACP); \
-    if(rule) { action  } else { { cleanup } A_SEE_PARSER_RESTORE_STATE(ACP); } \
+    A_SEE_PARSER_SAVE_STATE(ACP);  a_see_parser_trace_info_enter(ACP,OPTIONAL);\
+    if(rule) {  { action } a_see_parser_trace_info_success(ACP,OPTIONAL);   } \
+        else { { cleanup } a_see_parser_trace_info_fail(ACP,OPTIONAL); A_SEE_PARSER_RESTORE_STATE(ACP); } \
     1; \
   })
 
 #define A_SEE_PARSER_ZERO_OR_MORE(ACP,rule,action,cleanup) \
   ({ \
     do { \
-      A_SEE_PARSER_SAVE_STATE(ACP); \
-      if( rule ) { action } \
-      else { { cleanup} A_SEE_PARSER_RESTORE_STATE(ACP); break; } \
+      A_SEE_PARSER_SAVE_STATE(ACP);  a_see_parser_trace_info_enter(ACP,ZERO_OR_MORE);\
+      if( rule ) { { action } a_see_parser_trace_info_success(ACP,ZERO_OR_MORE); } \
+      else { { cleanup} a_see_parser_trace_info_fail(ACP,ZERO_OR_MORE); A_SEE_PARSER_RESTORE_STATE(ACP); break; } \
     } while(1); \
     1; \
   })
@@ -140,13 +137,14 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
   ({\
     int __cOuNt__=0;\
     do { \
-      A_SEE_PARSER_SAVE_STATE(ACP); \
+      A_SEE_PARSER_SAVE_STATE(ACP);  a_see_parser_trace_info_enter(ACP,ONE_OR_MORE);\
       if(rule) { \
-        __cOuNt__++; \
+        __cOuNt__++; a_see_parser_trace_info_success(ACP,ONE_OR_MORE);\
         { action } \
       } else { \
         \
-       { cleanup } A_SEE_PARSER_RESTORE_STATE(ACP); break; \
+       { cleanup } a_see_parser_trace_info_fail(ACP,ONE_OR_MORE); \
+         A_SEE_PARSER_RESTORE_STATE(ACP); break; \
       } \
     } while(1); \
     __cOuNt__>0; \
@@ -154,15 +152,22 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 
 #define A_SEE_PARSER_NON_CONSUMING_RULE(ACP,rule) \
   ({ \
-    A_SEE_PARSER_SAVE_STATE(ACP);\
+    A_SEE_PARSER_SAVE_STATE(ACP); a_see_parser_trace_info_enter(ACP,NON_CONSUMING_RULE);\
     int __rC__=rule;\
+    acp_trace { \
+      if(__rC__) \
+        a_see_parser_trace_info_success(ACP,NON_CONSUMING_RULE); \
+      else \
+        a_see_parser_trace_info_fail(ACP,NON_CONSUMING_RULE); \
+    } \
     A_SEE_PARSER_RESTORE_STATE(ACP);\
     __rC__;\
   })
 
 #define A_SEE_PARSER_SIMPLE_RULE(ACP,rule) \
-      ({ A_SEE_PARSER_SAVE_STATE(ACP);int __Rc__ = rule; \
-            if(!__Rc__) A_SEE_PARSER_RESTORE_STATE(ACP); __Rc__; })
+      ({ A_SEE_PARSER_SAVE_STATE(ACP); a_see_parser_trace_info_enter(ACP,SIMPLE_RULE);int __Rc__ = rule; \
+            if(__Rc__) { a_see_parser_trace_info_success(ACP,SIMPLE_RULE); } \
+            else {  a_see_parser_trace_info_fail(ACP,SIMPLE_RULE); A_SEE_PARSER_RESTORE_STATE(ACP); } __Rc__; })
 
 #define A_SEE_PARSER_DEFAULT_FLAGS ALLOW_NESTED_COMMENTS | INCLUDE_EOL_IN_WHITESPACE
 
@@ -180,6 +185,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
     a_see_parser_t* NAME = &NAME ## _parser;}
 #define SET_PARSE_STRING(ACP,str) A_SEE_PARSER_SET_PARSE_STRING(ACP,str)
 #define NEXT_CHR(ACP) A_SEE_PARSER_NEXT_CHR(ACP)
+#define NEXT_CHR_IS(ACP,CH) A_SEE_PARSER_NEXT_CHR_IS(ACP,CH)
 #define ANY(ACP) A_SEE_PARSER_ANY(ACP)
 #define PEEK_CHR(ACP) A_SEE_PARSER_PEEK_CHR(ACP)
 #define CAPTURE_ON(ACP) A_SEE_PARSER_CAPTURE_ON(ACP)
@@ -200,12 +206,15 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define SEQUENCE(ACP,SEQ) a_see_parser_char_sequence(ACP,SEQ)
 #define NON_CONSUMING_RULE(ACP,rule) A_SEE_PARSER_NON_CONSUMING_RULE(ACP,rule)
 #define SPACE(ACP) A_SEE_PARSER_SPACE(ACP)
+#define RANGE(ACP,__RANGE__) a_see_parser_range(ACP,__RANGE__)
+#define DOUBLE_QUOTED_STRING(ACP) a_see_parser_double_quoted_string(ACP)
 #else
 #define DECLARE_DEFAULT_A_SEE_PARSER extern a_see_parser_t* __global_a_see_parser_pointer__
 #define IMPLEMENT_DEFAULT_A_SEE_PARSER static a_see_parser_t __global_a_see_parser_pointer_parser=A_SEE_PARSER_DEFUALT; \
     a_see_parser_t* __global_a_see_parser_pointer__ = &__global_a_see_parser_pointer_parser
 #define SET_PARSE_STRING(str) A_SEE_PARSER_SET_PARSE_STRING(__global_a_see_parser_pointer__,str)
 #define NEXT_CHR A_SEE_PARSER_NEXT_CHR(__global_a_see_parser_pointer__)
+#define NEXT_CHR_IS(CH) A_SEE_PARSER_NEXT_CHR_IS(__global_a_see_parser_pointer__,CH)
 #define ANY A_SEE_PARSER_ANY(__global_a_see_parser_pointer__)
 #define PEEK_CHR A_SEE_PARSER_PEEK_CHR(__global_a_see_parser_pointer__)
 #define CAPTURE_ON A_SEE_PARSER_CAPTURE_ON(__global_a_see_parser_pointer__)
@@ -227,6 +236,8 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define IDENTIFIER a_see_parser_ident(__global_a_see_parser_pointer__)
 #define NON_CONSUMING_RULE(rule) A_SEE_PARSER_NON_CONSUMING_RULE(__global_a_see_parser_pointer__,rule)
 #define SPACE A_SEE_PARSER_SPACE(__global_a_see_parser_pointer__)
+#define RANGE(__RANGE__) a_see_parser_range(__global_a_see_parser_pointer__,__RANGE__)
+#define DOUBLE_QUOTED_STRING a_see_parser_double_quoted_string(__global_a_see_parser_pointer__)
 extern a_see_parser_t* __global_a_see_parser_pointer__;
 #endif
 

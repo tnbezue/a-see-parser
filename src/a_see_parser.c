@@ -72,15 +72,10 @@ int a_see_parser_char_sequence(a_see_parser_t*acp,const char*str)
 {
   return A_SEE_PARSER_SIMPLE_RULE(acp,
     ({
-      int rc=1;
-      int c;
-      while(*str && (c=A_SEE_PARSER_NEXT_CHR(acp))) {
-        if(c != *str) {
-          rc = 0;
-          break;
-        }
-        str++;
-      }
+      int rc=0;
+      for(;*str && *str == A_SEE_PARSER_NEXT_CHR(acp);str++);
+      if(*str == 0)
+        rc=1;
       rc;
     })
   );
