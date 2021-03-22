@@ -322,6 +322,7 @@ void test_sequence()
     { "o","opqrstu",1 },
     { "vwxyz01","vwxyz01",1 },
     { "345","2345678",0 },
+    { "345","",0 },
     { NULL, NULL, 0}
   };
   TESTCASE("Sequence");
@@ -456,6 +457,7 @@ void test_non_consuming_rule()
   TESTCASE("Non consuming");
   const char* str = "aaaaa";
   SET_PARSE_STRING(str);
+  count = 0;
   TEST("5 characters consummed and pointer remains at beginning of string",
       non_consuming_test_1('a') && count == 5 && __global_a_see_parser_pointer__->ptr_==str);
 }
