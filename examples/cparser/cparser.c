@@ -1246,7 +1246,6 @@ int keyword() {
       SEQUENCE("_Imaginary") ||
       SEQUENCE("_stdcall") ||
       SEQUENCE("__declspec") ||
-      SEQUENCE("__attribute__") ||
       SEQUENCE("__attribute__")
     ) && !ID_CHAR
   );
