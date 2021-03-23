@@ -164,6 +164,20 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
     __rC__;\
   })
 
+#define A_SEE_PARSER_NON_NOT(ACP,rule) \
+  ({ \
+    A_SEE_PARSER_SAVE_STATE(ACP); a_see_parser_trace_info_enter(ACP,NOT);\
+    int __rC__=!(rule);\
+    acp_trace { \
+      if(__rC__) \
+        a_see_parser_trace_info_success(ACP,NOT); \
+      else \
+        a_see_parser_trace_info_fail(ACP,NOT); \
+    } \
+    A_SEE_PARSER_RESTORE_STATE(ACP);\
+    __rC__;\
+  })
+
 #define A_SEE_PARSER_SIMPLE_RULE(ACP,rule) \
       ({ A_SEE_PARSER_SAVE_STATE(ACP); a_see_parser_trace_info_enter(ACP,SIMPLE_RULE);int __Rc__ = rule; \
             if(__Rc__) { a_see_parser_trace_info_success(ACP,SIMPLE_RULE); } \
@@ -205,9 +219,11 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define IDENTIFIER(ACP) a_see_parser_ident(ACP)
 #define SEQUENCE(ACP,SEQ) a_see_parser_char_sequence(ACP,SEQ)
 #define NON_CONSUMING_RULE(ACP,rule) A_SEE_PARSER_NON_CONSUMING_RULE(ACP,rule)
+#define NOT(ACP,rule) A_SEE_PARSER_NOT(ACP,rule)
 #define SPACE(ACP) A_SEE_PARSER_SPACE(ACP)
 #define RANGE(ACP,__RANGE__) a_see_parser_range(ACP,__RANGE__)
 #define DOUBLE_QUOTED_STRING(ACP) a_see_parser_double_quoted_string(ACP)
+#define EOL(ACP) a_see_parser_eol(ACP)
 #else
 #define DECLARE_DEFAULT_A_SEE_PARSER extern a_see_parser_t* __global_a_see_parser_pointer__
 #define IMPLEMENT_DEFAULT_A_SEE_PARSER static a_see_parser_t __global_a_see_parser_pointer_parser=A_SEE_PARSER_DEFUALT; \
@@ -235,10 +251,12 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define SEQUENCE(SEQ) a_see_parser_char_sequence(__global_a_see_parser_pointer__,SEQ)
 #define IDENTIFIER a_see_parser_ident(__global_a_see_parser_pointer__)
 #define NON_CONSUMING_RULE(rule) A_SEE_PARSER_NON_CONSUMING_RULE(__global_a_see_parser_pointer__,rule)
+#define NOT(rule) A_SEE_PARSER_NOT(__global_a_see_parser_pointer__,rule)
 #define SPACE A_SEE_PARSER_SPACE(__global_a_see_parser_pointer__)
 #define RANGE(__RANGE__) a_see_parser_range(__global_a_see_parser_pointer__,__RANGE__)
 #define DOUBLE_QUOTED_STRING a_see_parser_double_quoted_string(__global_a_see_parser_pointer__)
 extern a_see_parser_t* __global_a_see_parser_pointer__;
+#define EOL a_see_parser_eol(__global_a_see_parser_pointer__)
 #endif
 
 

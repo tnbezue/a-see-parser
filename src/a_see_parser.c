@@ -190,7 +190,7 @@ int a_see_parser_range(a_see_parser_t* acp,const char* range)
         A_SEE_PARSER_RANGE(acp,"0-9"),,) && A_SEE_PARSER_NEXT_CHR(acp)=='.' && \
         A_SEE_PARSER_ONE_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,)
 
-#define __FLOATING_POINT_OPTION_A__
+//#define __FLOATING_POINT_OPTION_A__
 int a_see_parser_floating_point(a_see_parser_t*acp)
 {
 #ifdef __FLOATING_POINT_OPTION_A__
@@ -207,40 +207,30 @@ int a_see_parser_floating_point(a_see_parser_t*acp)
     ) && A_SEE_PARSER_CAPTURE_OFF(acp) && A_SEE_PARSER_SPACE(acp);
 
 #else
-  int rc=0;
   return A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_CAPTURE_ON(acp) &&
       ({
         int c;
         int has_whole = 0;
         int has_decimal_point = 0;
-        int ndecimal_digits=0;
-        if(isdigit(A_SEE_PARSER_PEEK_CHR(acp))) {
-          A_SEE_PARSER_NEXT_CHR(acp);
-          for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp));
-          has_whole = 1;
-        }
-        if (A_SEE_PARSER_PEEK_CHR(acp) == '.') {
+        int has_decimal_digits=0;
+        int has_exponent=0; // 0 - not specified, -1 -- e (or E) without dightis, 1 -- valid
+        for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));has_whole = 1,A_SEE_PARSER_NEXT_CHR(acp));
+        if (A_SEE_PARSER_NEXT_CHR_IS(acp,'.')) {
           has_decimal_point = 1;
-          A_SEE_PARSER_NEXT_CHR(acp);
-          for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp)) ndecimal_digits++;
+          for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp),has_decimal_digits=1);
         }
-        if(has_whole || ndecimal_digits ) {
-          int has_exponent = 0;
+        if(has_whole || has_decimal_digits ) {
           if((c=A_SEE_PARSER_PEEK_CHR(acp)) == 'e' || c == 'E') {
+            has_exponent = -1;
             A_SEE_PARSER_NEXT_CHR(acp);
             if((c=A_SEE_PARSER_PEEK_CHR(acp)) == '+' || c == '-') {
               A_SEE_PARSER_NEXT_CHR(acp);
             }
-            int ndigits = 0;
-            for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp)) ndigits++;
-            if(ndigits > 0)
-              has_exponent = 1;
+            for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp)) has_exponent=1;
           }
-          if((has_whole && has_decimal_point) || (has_whole && has_exponent)
-              || (ndecimal_digits))
-            rc=1;
         }
-        rc;
+        (has_exponent >= 0) && ((has_whole && has_exponent)
+              || (has_whole && has_decimal_point) || has_decimal_digits);
       }) && A_SEE_PARSER_CAPTURE_OFF(acp) && A_SEE_PARSER_SPACE(acp));
 #endif
 }
