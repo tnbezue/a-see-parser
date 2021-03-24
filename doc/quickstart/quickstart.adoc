@@ -1,0 +1,29 @@
+
+== Quick Start
+If you a familiar with PEG grammars, the table below shows PEG predicates
+and the equivalent A-SEE-PARSER macro.
+
+
+.PEG and A-SEE-PARSER
+[width="100%",cols="^3,^6,10",options="header"]
+|=========================================================
+|PEG |A-SEE-PARSER |Comments
+| . | ANY | Matches any character
+| "characters" | SEQUENCE("characters")| Matches a sequence of characters
+| \'c'|NEXT_CHR_IS(\'c')| match a single character. Can also use SEQUENCE("c")
+|[characters] | RANGE("characters")| Matches one of specified characters
+|[^characters] | RANGE("^characters")| Does not match one of the specified characters
+| < text > | CAPTURE_ON text CAPTURE_OFF| Marks beginning and end of text to capture
+| yytext | CAPTURED_TEXT | Captured text
+| element ? | OPTIONAL(element) | optional element
+| element + | ONE_OR_MORE(element) | Matches one or more elements
+| element * | ZERO_OR_MORE(element) | Matches zero or more elements
+| &element | NON_CONSUMMING(element) | Matches element but does not consume input
+| !element | NOT(element) | Matches if not element. No input is consumed
+| !\'c'| NOT_CHR(\'c')| Special case of single character. Can use NOT(NEXT_CHR_IS(\'c\')) if desired
+| !. | !ANY | Matches end of input
+| &{ expression } | ( expression ) | If expression is true, reul continues
+| sequence { action } | RULE(sequence,action,) | C code to be executed is seqeunce is matched successfully
+| A B C / X Y Z | RULE(A && B && C,,) \|\| RULE(X && Y && Z,,)|
+|=========================================================
+
