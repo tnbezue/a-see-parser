@@ -94,6 +94,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define A_SEE_PARSER_PEEK_CHR(ACP) (*ACP->ptr_)
 #define A_SEE_PARSER_NEXT_CHR(ACP) a_see_parser_next_chr(ACP)
 #define A_SEE_PARSER_NEXT_CHR_IS(ACP,CH) ((A_SEE_PARSER_PEEK_CHR(ACP) == CH) && A_SEE_PARSER_NEXT_CHR(ACP))
+#define A_SEE_PARSER_NEXT_CHR_IS_NOT(ACP,CH) ((A_SEE_PARSER_PEEK_CHR(ACP) != CH) && A_SEE_PARSER_NEXT_CHR(ACP))
 #define A_SEE_PARSER_ANY(ACP) a_see_parser_next_chr(ACP)
 #define A_SEE_PARSER_SPACE(ACP) \
  ({ while(a_see_parser_whitespace(ACP,ACP->flags_&INCLUDE_EOL_IN_WHITESPACE) \
@@ -220,6 +221,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define SEQUENCE(ACP,SEQ) a_see_parser_char_sequence(ACP,SEQ)
 #define NON_CONSUMING_RULE(ACP,rule) A_SEE_PARSER_NON_CONSUMING_RULE(ACP,rule)
 #define NOT(ACP,rule) A_SEE_PARSER_NOT(ACP,rule)
+#define NEXT_CHR_IS_NOT(ACP,CH) A_SEE_PARSER_NEXT_CHR_IS_NOT(ACP,CH)
 #define SPACE(ACP) A_SEE_PARSER_SPACE(ACP)
 #define RANGE(ACP,__RANGE__) a_see_parser_range(ACP,__RANGE__)
 #define DOUBLE_QUOTED_STRING(ACP) a_see_parser_double_quoted_string(ACP)
@@ -252,6 +254,7 @@ int a_see_parser_capture_text(a_see_parser_t*,char*,unsigned int);
 #define IDENTIFIER a_see_parser_ident(__global_a_see_parser_pointer__)
 #define NON_CONSUMING_RULE(rule) A_SEE_PARSER_NON_CONSUMING_RULE(__global_a_see_parser_pointer__,rule)
 #define NOT(rule) A_SEE_PARSER_NOT(__global_a_see_parser_pointer__,rule)
+#define NEXT_CHR_IS_NOT(CH) A_SEE_PARSER_NEXT_CHR_IS_NOT(__global_a_see_parser_pointer__,CH)
 #define SPACE A_SEE_PARSER_SPACE(__global_a_see_parser_pointer__)
 #define RANGE(__RANGE__) a_see_parser_range(__global_a_see_parser_pointer__,__RANGE__)
 #define DOUBLE_QUOTED_STRING a_see_parser_double_quoted_string(__global_a_see_parser_pointer__)

@@ -224,36 +224,66 @@ void test_next_chr()
 {
   TESTCASE("NEXT_CHR");
   char msg[128];
-  int test_data[] = { 'a','b','c',0,0,0};
+  int test_data[][2] = { {'x',0},{'b',1},{'z',0},{'d',1},{'e',1},{'m',0}};
   int n = ARRAY_SIZE(test_data);
-  const char* str = "abc";
+  const char* str = "abcdef";
   SET_PARSE_STRING(str);
   int i;
   for(i=0;i<n;i++) {
-    if(test_data[i])
-      sprintf(msg,"NEXT_CHR is '%c'",test_data[i]);
-    else
-      sprintf(msg,"NEXT_CHR is end of string");
-    TEST(msg,NEXT_CHR == test_data[i]);
+    if(test_data[i][1]) {
+      sprintf(msg,"NEXT_CHR is '%c'",test_data[i][0]);
+      TEST(msg,NEXT_CHR == test_data[i][0] );
+    } else {
+      sprintf(msg,"NEXT_CHR is not '%c'",test_data[i][0]);
+      TEST(msg,NEXT_CHR != test_data[i][0] );
+    }
   }
+  TEST("NEXT_CHR is end of input",NEXT_CHR == 0);
+  TEST("NEXT_CHR is end of input",NEXT_CHR == 0);
 }
 
 void test_peek_chr()
 {
   TESTCASE("PEEK_CHR");
   char msg[128];
-  int test_data[] = { 'a','b','c',0,0,0};
+  int test_data[][2] = { {'x',0},{'b',1},{'z',0},{'d',1},{'e',1},{'m',0}};
   int n = ARRAY_SIZE(test_data);
-  const char* str = "abc";
+  const char* str = "abcdef";
   SET_PARSE_STRING(str);
   int i;
   for(i=0;i<n;i++) {
-    if(test_data[i])
-      sprintf(msg,"PEEK_CHR is '%c'",test_data[i]);
-    else
-      sprintf(msg,"PEEK_CHR is end of string");
-    TEST(msg,PEEK_CHR == test_data[i]);
+    if(test_data[i][1]) {
+      sprintf(msg,"PEEK_CHR is '%c'",test_data[i][0]);
+      TEST(msg,PEEK_CHR == test_data[i][0] );
+    } else {
+      sprintf(msg,"PEEK_CHR is not '%c'",test_data[i][0]);
+      TEST(msg,PEEK_CHR != test_data[i][0] );
+    }
     NEXT_CHR;
+  }
+  TEST("PEEK_CHR is end of input",NEXT_CHR == 0);
+  NEXT_CHR;
+  TEST("PEEK_CHR is end of input",NEXT_CHR == 0);
+}
+
+void test_next_chr_is_not()
+{
+  TESTCASE("Next char is not");
+  char msg[128];
+  int test_data[][2] = { {'x',1},{'b',0},{'z',1},{'d',0},{'e',0},{'m',1}};
+  int n = ARRAY_SIZE(test_data);
+  const char* str = "abcdef";
+  SET_PARSE_STRING(str);
+  int i;
+  for(i=0;i<n;i++) {
+    if(test_data[i][1]) {
+      sprintf(msg,"NEXT_CHR_IS_NOT '%c'",test_data[i][0]);
+      TEST(msg,NEXT_CHR_IS_NOT(test_data[i][0]));
+    } else {
+      sprintf(msg,"NEXT_CHR_IS_NOT not '%c'",test_data[i][0]);
+      TEST(msg,NEXT_CHR_IS_NOT(test_data[i][0])==0);
+      NEXT_CHR;
+    }
   }
 }
 
@@ -476,6 +506,7 @@ test_function tests[] =
   test_not_range,
   test_next_chr,
   test_peek_chr,
+  test_next_chr_is_not,
   test_simple_rule,
   test_sequence,
   test_rule,
