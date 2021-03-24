@@ -208,16 +208,16 @@ int main(int argc,char* argv[])
     SET_PARSE_STRING(argv[i]);
     if(expr(&ast)) {
       x = 12.5;
-      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->eval(ast));
+      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->vtable->eval(ast));
       x = -2.75;
-      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->eval(ast));
+      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->vtable->eval(ast));
       x = 0.03;
-      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->eval(ast));
+      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->vtable->eval(ast));
       char fname[32] = "Prob";
       sprintf(fname+4,"%d.gv",i);
       FILE* f = fopen(fname,"w");
       fprintf(f,"digraph \"%s\" {\n",argv[i]);
-      ast->graph(ast,f);
+      ast->vtable->graph(ast,f);
       fprintf(f,"}\n");
       fclose(f);
       delete_ast(ast);

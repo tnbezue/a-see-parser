@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+void dtor_noop(void*);
 
 typedef double (*math_function)(double);
 typedef struct {
@@ -31,11 +32,12 @@ typedef struct {
 } ast_vtable_t;
 
 typedef struct {
-  ast_vtable_t;
+  const ast_vtable_t* vtable;
 } ast_t;
 
-void ast_init(void*,ast_dtor,print_ast_element,graph_ast_element,eval_ast_element);
-#define delete_ast(p) (((ast_t*)p)->dtor(p),free(p))
+//void ast_init(void*,ast_dtor,print_ast_element,graph_ast_element,eval_ast_element);
+void ast_init(void*,const ast_vtable_t*);
+#define delete_ast(p) (((ast_t*)p)->vtable->dtor(p),free(p))
 
 typedef struct {
   ast_t;
