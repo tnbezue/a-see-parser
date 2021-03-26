@@ -109,7 +109,7 @@ int term(ast_t** last)
   ast_t* rast=NULL;
   return factor(last) &&
     ZERO_OR_MORE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(&rast),
-      *last = (ast_t*)new_binary_op(*last,c,rast);
+      *last = (ast_t*)NEW(binary_op_t,binary_op_ctor,*last,c,rast);
     ,);
 }
 
@@ -119,12 +119,12 @@ int factor(ast_t** last)
   int c;
   ast_t* rast=NULL;
   return RULE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(last),
-      *last = (ast_t*)new_unary_op(c,*last);
+      *last = (ast_t*)NEW(unary_op_t,unary_op_ctor,c,*last);
     ,)
   ||
   (power(last) &&
         ZERO_OR_MORE(((TIMES && (c='*')) || (DIVIDE && (c='/'))) && power(&rast),
-          *last = (ast_t*)new_binary_op(*last,c,rast);
+          *last = (ast_t*)NEW(binary_op_t,binary_op_ctor,*last,c,rast);
         ,));
 }
 
@@ -133,7 +133,7 @@ int power(ast_t** last)
 {
   ast_t* rast=NULL;
   return value(last) && ZERO_OR_MORE(POWER && power(&rast),
-    *last = (ast_t*) new_binary_op(*last,'^',rast);
+    *last = (ast_t*) NEW(binary_op_t,binary_op_ctor,*last,'^',rast);
   ,);
 }
 
@@ -145,7 +145,7 @@ int value(ast_t** ast)
     ||
     RULE(LPAREN && term(ast) && (rc = 1) && RPAREN,
     ,
-      if(rc && *ast) delete_ast(*ast);
+      if(rc && *ast) DELETE(*ast);
     )
     ||
     function(ast)
@@ -166,7 +166,7 @@ int number(ast_t** ast)
       d=atof(nstr);
     else
       d=strtol(nstr,NULL,0);
-    *ast = (ast_t*) new_number(d);
+    *ast = (ast_t*) NEW(number_t,number_ctor,d);
   ,);
 }
 
@@ -180,13 +180,13 @@ int function(ast_t** ast)
           && term(&fterm) && (rc = 1) && RPAREN,
           const math_function_description_t* func= get_math_function(id);
           if(func)
-            *ast = (ast_t*) new_math_function(func,fterm);
+            *ast = (ast_t*) NEW(math_function_t,math_function_ctor,func,fterm);
           else {
             printf("Function %s is undefined\n",id);
             exit(1);
           }
           ,
-            if(rc && fterm) delete_ast(fterm);
+            if(rc && fterm) DELETE(fterm);
           );
 }
 
@@ -196,7 +196,7 @@ int variable(ast_t** ast)
     char id[126];
     CAPTURE_TEXT(id,128);
     const variable_description_t *var = get_variable(id);
-    *ast = (ast_t*)new_variable(var);
+    *ast = (ast_t*)NEW(variable_t,variable_ctor,var);
   ,);
 }
 
@@ -220,7 +220,7 @@ int main(int argc,char* argv[])
       ast->vtable->graph(ast,f);
       fprintf(f,"}\n");
       fclose(f);
-      delete_ast(ast);
+      DELETE(ast);
     }
     else
       printf("%s -- Failed\n",argv[i]);

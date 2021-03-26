@@ -3,9 +3,7 @@
 #include "ast_tree.h"
 
 
-void dtor_noop(void* ptr) { } // for objects that do not require a destructor
-
-#define NEW(T) (T*)malloc(sizeof(T))
+//void dtor_noop(void* ptr) { } // for objects that do not require a destructor
 
 //void ast_init(void* ptr,ast_dtor dtor,print_ast_element print,graph_ast_element graph,eval_ast_element eval)
 void ast_init(void* ptr,const ast_vtable_t* vt)
@@ -14,19 +12,20 @@ void ast_init(void* ptr,const ast_vtable_t* vt)
   this->vtable=vt;
 }
 
-ast_vtable_t unary_op_vtable = {unary_op_dtor,unary_op_print, unary_op_graph, unary_op_eval};
+ast_vtable_t unary_op_vtable = { { unary_op_dtor },unary_op_print, unary_op_graph, unary_op_eval};
 
-unary_op_t* new_unary_op(char o,void* l)
+void unary_op_ctor(void* ptr,int op,void* l)
 {
-  unary_op_t* uo = NEW(unary_op_t);
-  ast_init(uo,&unary_op_vtable);
-  return uo;
+  unary_op_t* this = ptr;
+  ast_init(ptr,&unary_op_vtable);
+  this->op=op;
+  this->left=l;
 }
 
 void unary_op_dtor(void* uo)
 {
   const unary_op_t* this = uo;
-  delete_ast(this->left);
+  DELETE(this->left);
 //  this->left->vtable->dtor(this->left);
 }
 
@@ -54,22 +53,21 @@ double unary_op_eval(const void* uo)
   return value;
 }
 
-ast_vtable_t binary_op_vtable = {binary_op_dtor, binary_op_print,binary_op_graph,binary_op_eval };
-binary_op_t* new_binary_op(void* l,char op,void* r)
+ast_vtable_t binary_op_vtable = {{binary_op_dtor}, binary_op_print,binary_op_graph,binary_op_eval };
+void binary_op_ctor(void*ptr,void* l,char op,void* r)
 {
-  binary_op_t* this = NEW(binary_op_t);
+  binary_op_t* this = ptr;
   ast_init(this,&binary_op_vtable);
   this->left = l;
   this->op = op;
   this->right = r;
-  return this;
 }
 
 void binary_op_dtor(void* bo)
 {
   binary_op_t* this = bo;
-  delete_ast(this->left);
-  delete_ast(this->right);
+  DELETE(this->left);
+  DELETE(this->right);
 //  this->left->vtable->dtor(this->left);
 //  this->right->vtable->dtor(this->right);
 }
@@ -121,13 +119,12 @@ void binary_op_graph(const void* bo,FILE* o)
   fprintf(o,"L%p -> L%p;\n",this,this->right);
 }
 
-ast_vtable_t number_vtable = {number_dtor,number_print,number_graph,number_eval };
-number_t* new_number(double v)
+ast_vtable_t number_vtable = {{number_dtor},number_print,number_graph,number_eval };
+void number_ctor(number_t*ptr,double v)
 {
-  number_t* this = NEW(number_t);
+  number_t* this = ptr;
   ast_init(this,&number_vtable);
   this->value = v;
-  return this;
 }
 
 void number_print(const void* n,FILE* o)
@@ -147,13 +144,12 @@ double number_eval(const void* n)
   return ((const number_t*)n)->value;
 }
 
-ast_vtable_t variable_vtable = {variable_dtor,variable_print,variable_graph,variable_eval };
-variable_t* new_variable(const variable_description_t* var)
+ast_vtable_t variable_vtable = {{variable_dtor},variable_print,variable_graph,variable_eval };
+void variable_ctor(variable_t* ptr,const variable_description_t* var)
 {
-  variable_t* this= NEW(variable_t);
+  variable_t* this= ptr;
   ast_init(this,&variable_vtable);
   this->var = var;
-  return this;
 }
 
 void variable_print(const void* v,FILE* o)
@@ -173,14 +169,13 @@ double variable_eval(const void* v)
   return *((const variable_t*)v)->var->pvalue;
 }
 
-ast_vtable_t math_function_vtable = { math_function_dtor,math_function_print,math_function_graph,math_function_eval};
-math_function_t* new_math_function(const math_function_description_t* func,void* l)
+ast_vtable_t math_function_vtable = { {math_function_dtor},math_function_print,math_function_graph,math_function_eval};
+void math_function_ctor(math_function_t* ptr,const math_function_description_t* func,void* l)
 {
-  math_function_t* this = NEW(math_function_t);
+  math_function_t* this = ptr;
   ast_init(this,&math_function_vtable);
   this->func=func;
   this->left=l;
-  return this;
 }
 
 void math_function_print(const void *mf,FILE* o)
