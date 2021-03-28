@@ -168,7 +168,7 @@ double variable_ast_eval(const void* v)
 
 ast_vtable_t math_function_ast_vtable = { {math_function_ast_dtor},math_function_ast_print,
         math_function_ast_graph,math_function_ast_eval};
-void math_function_ctor(void* ptr,const math_function_description_t* func,void* l)
+void math_function_ast_ctor(void* ptr,const math_function_description_t* func,void* l)
 {
   math_function_ast_t* this = ptr;
   ast_init(this,&math_function_ast_vtable);
@@ -176,14 +176,14 @@ void math_function_ctor(void* ptr,const math_function_description_t* func,void* 
   this->left=l;
 }
 
-void math_function_print(const void *mf,FILE* o)
+void math_function_ast_print(const void *mf,FILE* o)
 {
   const math_function_ast_t* this = mf;
   fprintf(o,"%s\n",this->func->name);
   M(this->left,print,o);
 }
 
-void math_function_graph(const void*mf,FILE* o)
+void math_function_ast_graph(const void*mf,FILE* o)
 {
   const math_function_ast_t* this = mf;
   M(this->left,graph,o);
@@ -191,7 +191,7 @@ void math_function_graph(const void*mf,FILE* o)
   fprintf(o,"L%p -> L%p;\n",this,this->left);
 }
 
-double math_function_eval(const void*mf)
+double math_function_ast_eval(const void*mf)
 {
   const math_function_ast_t* this = mf;
   return this->func->func(M(this->left,eval));

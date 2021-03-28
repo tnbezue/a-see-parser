@@ -28,6 +28,10 @@ typedef struct {
 #endif
 } object_t;
 
-#define M(ptr,method,...) (ptr)->vtable->method(ptr,## __VA_ARGS__)
+/*
+  Calls the specified method using the pointer to the virtual table defined in this object
+*/
+#define __M(ptr,method,...) (ptr)->vtable->method(ptr, ## __VA_ARGS__)
+#define M(ptr,...) __M(ptr, __VA_ARGS__)
 
 #endif
