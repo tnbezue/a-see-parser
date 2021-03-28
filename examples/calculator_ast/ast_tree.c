@@ -12,7 +12,7 @@ void ast_init(void* ptr,const ast_vtable_t* vt)
   this->vtable=vt;
 }
 
-ast_vtable_t unary_op_ast_vtable = { { unary_op_ast_dtor },unary_op_ast_print, unary_op_ast_graph, unary_op_ast_eval};
+ast_vtable_t unary_op_ast_vtable = { { &object_vtable,unary_op_ast_dtor },unary_op_ast_print, unary_op_ast_graph, unary_op_ast_eval};
 
 void unary_op_ast_ctor(void* ptr,int op,void* l)
 {
@@ -52,7 +52,7 @@ double unary_op_ast_eval(const void* uo)
   return value;
 }
 
-ast_vtable_t binary_op_ast_vtable = {{binary_op_ast_dtor}, binary_op_ast_print,binary_op_ast_graph,binary_op_ast_eval };
+ast_vtable_t binary_op_ast_vtable = {{ &object_vtable,binary_op_ast_dtor}, binary_op_ast_print,binary_op_ast_graph,binary_op_ast_eval };
 void binary_op_ast_ctor(void*ptr,void* l,char op,void* r)
 {
   binary_op_ast_t* this = ptr;
@@ -116,7 +116,7 @@ void binary_op_ast_graph(const void* bo,FILE* o)
   fprintf(o,"L%p -> L%p;\n",this,this->right);
 }
 
-ast_vtable_t number_ast_vtable = {{number_ast_dtor},number_ast_print,number_ast_graph,number_ast_eval };
+ast_vtable_t number_ast_vtable = {{ &object_vtable,number_ast_dtor},number_ast_print,number_ast_graph,number_ast_eval };
 void number_ast_ctor(void*ptr,double v)
 {
   number_ast_t* this = ptr;
@@ -141,7 +141,7 @@ double number_ast_eval(const void* n)
   return ((const number_ast_t*)n)->value;
 }
 
-ast_vtable_t variable_ast_vtable = {{variable_ast_dtor},variable_ast_print,variable_ast_graph,variable_ast_eval };
+ast_vtable_t variable_ast_vtable = {{ &object_vtable,variable_ast_dtor},variable_ast_print,variable_ast_graph,variable_ast_eval };
 void variable_ast_ctor(void* ptr,const variable_description_t* var)
 {
   variable_ast_t* this= ptr;
@@ -166,8 +166,8 @@ double variable_ast_eval(const void* v)
   return *((const variable_ast_t*)v)->var->pvalue;
 }
 
-ast_vtable_t math_function_ast_vtable = { {math_function_ast_dtor},math_function_ast_print,
-        math_function_ast_graph,math_function_ast_eval};
+ast_vtable_t math_function_ast_vtable = { { &object_vtable,math_function_ast_dtor},
+        math_function_ast_print,math_function_ast_graph,math_function_ast_eval};
 void math_function_ast_ctor(void* ptr,const math_function_description_t* func,void* l)
 {
   math_function_ast_t* this = ptr;

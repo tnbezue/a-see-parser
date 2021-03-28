@@ -11,10 +11,14 @@ void ctor_noop(void*);
 typedef void (*dtor)(void*);
 #define dtor_noop ctor_noop
 
-typedef struct {
-  dtor dtor_;
-} object_vtable_t;
+typedef struct object_vtable_s object_vtable_t;
 
+struct object_vtable_s {
+  object_vtable_t* parent_vtable_;
+  dtor dtor_;
+};
+
+extern object_vtable_t object_vtable;
 // Microsoft C doesn't like empty structurs
 #ifndef _MSC_VER
 typedef struct {
