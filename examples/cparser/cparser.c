@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#define __USE_A_SEE_PARSER_PREDICATES__
 #include <a_see_parser/a_see_parser.h>
 
 DECLARE_DEFAULT_A_SEE_PARSER;
@@ -30,94 +31,96 @@ IMPLEMENT_DEFAULT_A_SEE_PARSER;
 
 #define ID_CHAR RANGE("_a-zA-Z0-9")
 #define ID_NONDIGIT RANGE("_a-zA-Z")
+#define __USE_A_SEE_PARSER_PREDICATES__
 
-#define AUTO (SEQUENCE("auto") && !ID_CHAR && SPACE)
-#define BREAK (SEQUENCE("break") && !ID_CHAR && SPACE)
-#define CASE (SEQUENCE("case") && !ID_CHAR && SPACE)
-#define CHAR (SEQUENCE("char") && !ID_CHAR && SPACE)
-#define CONST (SEQUENCE("const") && !ID_CHAR && SPACE)
-#define CONTINUE (SEQUENCE("continue") && !ID_CHAR && SPACE)
-#define DEFAULT (SEQUENCE("default") && !ID_CHAR && SPACE)
-#define DOUBLE (SEQUENCE("double") && !ID_CHAR && SPACE)
-#define DO (SEQUENCE("do") && !ID_CHAR && SPACE)
-#define ELSE (SEQUENCE("else") && !ID_CHAR && SPACE)
-#define ENUM (SEQUENCE("enum") && !ID_CHAR && SPACE)
-#define EXTERN (SEQUENCE("extern") && !ID_CHAR && SPACE)
-#define FLOAT (SEQUENCE("float") && !ID_CHAR && SPACE)
-#define FOR (SEQUENCE("for") && !ID_CHAR && SPACE)
-#define GOTO (SEQUENCE("goto") && !ID_CHAR && SPACE)
-#define IF (SEQUENCE("if") && !ID_CHAR && SPACE)
-#define INT (SEQUENCE("int") && !ID_CHAR && SPACE)
-#define INLINE (SEQUENCE("inline") && !ID_CHAR && SPACE)
-#define LONG (SEQUENCE("long") && !ID_CHAR && SPACE)
-#define REGISTER (SEQUENCE("register") && !ID_CHAR && SPACE)
-#define RESTRICT (SEQUENCE("restrict") && !ID_CHAR && SPACE)
-#define RETURN (SEQUENCE("return") && !ID_CHAR && SPACE)
-#define SHORT (SEQUENCE("short") && !ID_CHAR && SPACE)
-#define SIGNED (SEQUENCE("signed") && !ID_CHAR && SPACE)
-#define SIZEOF (SEQUENCE("sizeof") && !ID_CHAR && SPACE)
-#define STATIC (SEQUENCE("static") && !ID_CHAR && SPACE)
-#define STRUCT (SEQUENCE("struct") && !ID_CHAR && SPACE)
-#define SWITCH (SEQUENCE("switch") && !ID_CHAR && SPACE)
-#define TYPEDEF (SEQUENCE("typedef") && !ID_CHAR && SPACE)
-#define UNION (SEQUENCE("union") && !ID_CHAR && SPACE)
-#define UNSIGNED (SEQUENCE("unsigned") && !ID_CHAR && SPACE)
-#define VOID (SEQUENCE("void") && !ID_CHAR && SPACE)
-#define VOLATILE (SEQUENCE("volatile") && !ID_CHAR && SPACE)
-#define WHILE (SEQUENCE("while") && !ID_CHAR && SPACE)
-#define BOOL (SEQUENCE("_Bool") && !ID_CHAR && SPACE)
-#define COMPLEX (SEQUENCE("_Complex") && !ID_CHAR && SPACE)
-#define IMAGINARY (SEQUENCE("_Imaginary") && !ID_CHAR && SPACE)
-#define STDCALL (SEQUENCE("_stdcall") && !ID_CHAR && SPACE)
-#define DECLSPEC (SEQUENCE("__declspec") && !ID_CHAR && SPACE)
-#define ATTRIBUTE (SEQUENCE("__attribute__") && !ID_CHAR && SPACE)
+#define SPACING (ACP_WHITESPACE(" \t\r\n"),1)
+#define AUTO (SEQUENCE("auto") && !ID_CHAR && SPACING)
+#define BREAK (SEQUENCE("break") && !ID_CHAR && SPACING)
+#define CASE (SEQUENCE("case") && !ID_CHAR && SPACING)
+#define CHAR (SEQUENCE("char") && !ID_CHAR && SPACING)
+#define CONST (SEQUENCE("const") && !ID_CHAR && SPACING)
+#define CONTINUE (SEQUENCE("continue") && !ID_CHAR && SPACING)
+#define DEFAULT (SEQUENCE("default") && !ID_CHAR && SPACING)
+#define DOUBLE (SEQUENCE("double") && !ID_CHAR && SPACING)
+#define DO (SEQUENCE("do") && !ID_CHAR && SPACING)
+#define ELSE (SEQUENCE("else") && !ID_CHAR && SPACING)
+#define ENUM (SEQUENCE("enum") && !ID_CHAR && SPACING)
+#define EXTERN (SEQUENCE("extern") && !ID_CHAR && SPACING)
+#define FLOAT (SEQUENCE("float") && !ID_CHAR && SPACING)
+#define FOR (SEQUENCE("for") && !ID_CHAR && SPACING)
+#define GOTO (SEQUENCE("goto") && !ID_CHAR && SPACING)
+#define IF (SEQUENCE("if") && !ID_CHAR && SPACING)
+#define INT (SEQUENCE("int") && !ID_CHAR && SPACING)
+#define INLINE (SEQUENCE("inline") && !ID_CHAR && SPACING)
+#define LONG (SEQUENCE("long") && !ID_CHAR && SPACING)
+#define REGISTER (SEQUENCE("register") && !ID_CHAR && SPACING)
+#define RESTRICT (SEQUENCE("restrict") && !ID_CHAR && SPACING)
+#define RETURN (SEQUENCE("return") && !ID_CHAR && SPACING)
+#define SHORT (SEQUENCE("short") && !ID_CHAR && SPACING)
+#define SIGNED (SEQUENCE("signed") && !ID_CHAR && SPACING)
+#define SIZEOF (SEQUENCE("sizeof") && !ID_CHAR && SPACING)
+#define STATIC (SEQUENCE("static") && !ID_CHAR && SPACING)
+#define STRUCT (SEQUENCE("struct") && !ID_CHAR && SPACING)
+#define SWITCH (SEQUENCE("switch") && !ID_CHAR && SPACING)
+#define TYPEDEF (SEQUENCE("typedef") && !ID_CHAR && SPACING)
+#define UNION (SEQUENCE("union") && !ID_CHAR && SPACING)
+#define UNSIGNED (SEQUENCE("unsigned") && !ID_CHAR && SPACING)
+#define VOID (SEQUENCE("void") && !ID_CHAR && SPACING)
+#define VOLATILE (SEQUENCE("volatile") && !ID_CHAR && SPACING)
+#define WHILE (SEQUENCE("while") && !ID_CHAR && SPACING)
+#define BOOL (SEQUENCE("_Bool") && !ID_CHAR && SPACING)
+#define COMPLEX (SEQUENCE("_Complex") && !ID_CHAR && SPACING)
+#define IMAGINARY (SEQUENCE("_Imaginary") && !ID_CHAR && SPACING)
+#define STDCALL (SEQUENCE("_stdcall") && !ID_CHAR && SPACING)
+#define DECLSPEC (SEQUENCE("__declspec") && !ID_CHAR && SPACING)
+#define ATTRIBUTE (SEQUENCE("__attribute__") && !ID_CHAR && SPACING)
 
-#define ELLIPSIS (SEQUENCE("...") && SPACE)
-#define LEFTEQU (SEQUENCE("<<=") && SPACE)
-#define RIGHTEQU (SEQUENCE(">>=") && SPACE)
-#define PTR (SEQUENCE("->") && SPACE)
-#define INC (SEQUENCE("++") && SPACE)
-#define DEC (SEQUENCE("--") && SPACE)
-#define LEFT (SEQUENCE("<<") && SPACE)
-#define RIGHT (SEQUENCE(">>") && SPACE)
-#define LE (SEQUENCE("<=") && SPACE)
-#define GE (SEQUENCE(">=") && SPACE)
-#define EQUEQU (SEQUENCE("==") && SPACE)
-#define BANGEQU (SEQUENCE("!=") && SPACE)
-#define ANDAND (SEQUENCE("&&") && SPACE)
-#define OROR (SEQUENCE("||") && SPACE)
-#define STAREQU (SEQUENCE("*=") && SPACE)
-#define DIVEQU (SEQUENCE("/=") && SPACE)
-#define MODEQU (SEQUENCE("%=") && SPACE)
-#define PLUSEQU (SEQUENCE("+=") && SPACE)
-#define MINUSEQU (SEQUENCE("-=") && SPACE)
-#define ANDEQU (SEQUENCE("&=") && SPACE)
-#define HATEQU (SEQUENCE("^=") && SPACE)
-#define OREQU (SEQUENCE("|=") && SPACE)
-#define LBRK (NEXT_CHR_IS('[') && SPACE)
-#define RBRK (NEXT_CHR_IS(']') && SPACE)
-#define LPAR (NEXT_CHR_IS('(') && SPACE)
-#define RPAR (NEXT_CHR_IS(')') && SPACE)
-#define LWING (NEXT_CHR_IS('{') && SPACE)
-#define RWING (NEXT_CHR_IS('}') && SPACE)
-#define DOT (NEXT_CHR_IS('.') && SPACE)
-#define AND (NEXT_CHR_IS('&') && SPACE)
-#define STAR (NEXT_CHR_IS('*') && SPACE)
-#define PLUS (NEXT_CHR_IS('+') && SPACE)
-#define MINUS (NEXT_CHR_IS('-') && SPACE)
-#define TILDA (NEXT_CHR_IS('~') && SPACE)
-#define BANG (NEXT_CHR_IS('!') && SPACE)
-#define DIV (NEXT_CHR_IS('/') && SPACE)
-#define MOD (NEXT_CHR_IS('%') && SPACE)
-#define LT (NEXT_CHR_IS('<') && SPACE)
-#define GT (NEXT_CHR_IS('>') && SPACE)
-#define HAT (NEXT_CHR_IS('^') && SPACE)
-#define OR (NEXT_CHR_IS('|') && SPACE)
-#define QUERY (NEXT_CHR_IS('?') && SPACE)
-#define COLON (NEXT_CHR_IS(':') && SPACE)
-#define SEMI (NEXT_CHR_IS(';') && SPACE)
-#define EQU (NEXT_CHR_IS('=') && SPACE)
-#define COMMA (NEXT_CHR_IS(',') && SPACE)
+#define ELLIPSIS (SEQUENCE("...") && SPACING)
+#define LEFTEQU (SEQUENCE("<<=") && SPACING)
+#define RIGHTEQU (SEQUENCE(">>=") && SPACING)
+#define PTR (SEQUENCE("->") && SPACING)
+#define INC (SEQUENCE("++") && SPACING)
+#define DEC (SEQUENCE("--") && SPACING)
+#define LEFT (SEQUENCE("<<") && SPACING)
+#define RIGHT (SEQUENCE(">>") && SPACING)
+#define LE (SEQUENCE("<=") && SPACING)
+#define GE (SEQUENCE(">=") && SPACING)
+#define EQUEQU (SEQUENCE("==") && SPACING)
+#define BANGEQU (SEQUENCE("!=") && SPACING)
+#define ANDAND (SEQUENCE("&&") && SPACING)
+#define OROR (SEQUENCE("||") && SPACING)
+#define STAREQU (SEQUENCE("*=") && SPACING)
+#define DIVEQU (SEQUENCE("/=") && SPACING)
+#define MODEQU (SEQUENCE("%=") && SPACING)
+#define PLUSEQU (SEQUENCE("+=") && SPACING)
+#define MINUSEQU (SEQUENCE("-=") && SPACING)
+#define ANDEQU (SEQUENCE("&=") && SPACING)
+#define HATEQU (SEQUENCE("^=") && SPACING)
+#define OREQU (SEQUENCE("|=") && SPACING)
+#define LBRK (NEXT_CHR_IS('[') && SPACING)
+#define RBRK (NEXT_CHR_IS(']') && SPACING)
+#define LPAR (NEXT_CHR_IS('(') && SPACING)
+#define RPAR (NEXT_CHR_IS(')') && SPACING)
+#define LWING (NEXT_CHR_IS('{') && SPACING)
+#define RWING (NEXT_CHR_IS('}') && SPACING)
+#define DOT (NEXT_CHR_IS('.') && SPACING)
+#define AND (NEXT_CHR_IS('&') && SPACING)
+#define STAR (NEXT_CHR_IS('*') && SPACING)
+#define PLUS (NEXT_CHR_IS('+') && SPACING)
+#define MINUS (NEXT_CHR_IS('-') && SPACING)
+#define TILDA (NEXT_CHR_IS('~') && SPACING)
+#define BANG (NEXT_CHR_IS('!') && SPACING)
+#define DIV (NEXT_CHR_IS('/') && SPACING)
+#define MOD (NEXT_CHR_IS('%') && SPACING)
+#define LT (NEXT_CHR_IS('<') && SPACING)
+#define GT (NEXT_CHR_IS('>') && SPACING)
+#define HAT (NEXT_CHR_IS('^') && SPACING)
+#define OR (NEXT_CHR_IS('|') && SPACING)
+#define QUERY (NEXT_CHR_IS('?') && SPACING)
+#define COLON (NEXT_CHR_IS(':') && SPACING)
+#define SEMI (NEXT_CHR_IS(';') && SPACING)
+#define EQU (NEXT_CHR_IS('=') && SPACING)
+#define COMMA (NEXT_CHR_IS(',') && SPACING)
 #define EOT !ANY
 
 #define HEX_DIGIT RANGE("0-9a-fA-F")
@@ -210,7 +213,7 @@ int ();*/
 // TranslationUnit <- Spacing ( ExternalDeclaration / SEMI ) * EOT
 int translation_unit()
 {
-  return SPACE && RULE(ZERO_OR_MORE(external_declaration() || SEMI,,),,) && EOT;
+  return SPACING && RULE(ZERO_OR_MORE(external_declaration() || SEMI,,),,) && EOT;
 }
 
 // ExternalDeclaration <- FunctionDefinition / Declaration
@@ -1021,13 +1024,13 @@ int enumeration_constant()
 // StringLiteral <- 'L'? (["] StringChar* ["] Spacing)+
 int string_literal()
 {
-  return RULE(OPTIONAL(NEXT_CHR=='L',,) && ONE_OR_MORE(DOUBLE_QUOTED_STRING && SPACE,,),,);
+  return RULE(OPTIONAL(NEXT_CHR=='L',,) && ONE_OR_MORE(ACP_DOUBLE_QUOTED_STRING && SPACING,,),,);
 }
 
 // Identifier <- !Keyword IdNondigit IdChar* Spacing #{}
 int identifier()
 {
-  return RULE(!keyword() && ID_NONDIGIT && ZERO_OR_MORE(ID_CHAR,,) && SPACE,,);
+  return RULE(!keyword() && ID_NONDIGIT && ZERO_OR_MORE(ID_CHAR,,) && SPACING,,);
 }
 
 /*
@@ -1055,7 +1058,7 @@ IntegerConstant
 int integer_constant()
 {
   return RULE((decimal_constant() || hex_constant() || octal_constant())
-        && OPTIONAL(integer_suffix(),,) && SPACE,,);
+        && OPTIONAL(integer_suffix(),,) && SPACING,,);
 }
 
 //DecimalConstant <- [1-9][0-9]*
@@ -1098,7 +1101,7 @@ FloatConstant
 int float_constant()
 {
   return RULE((decimal_float_constant() || hex_float_constant())
-      && OPTIONAL(FLOAT_SUFFIX,,),,) && SPACE;
+      && OPTIONAL(FLOAT_SUFFIX,,),,) && SPACING;
 }
 /*
 DecimalFloatConstant

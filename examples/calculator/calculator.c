@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#define __USE_A_SEE_PARSER_PREDICATES__
 #include <a_see_parser/a_see_parser.h>
 
 DECLARE_DEFAULT_A_SEE_PARSER;
@@ -90,13 +91,17 @@ const variable_description_t* get_variable(const char* name)
   return NULL;
 }
 
-#define PLUS ((PEEK_CHR == '+' && NEXT_CHR) && SPACE)
-#define MINUS ((PEEK_CHR == '-' && NEXT_CHR) && SPACE)
-#define TIMES ((PEEK_CHR == '*' && NEXT_CHR) && SPACE)
-#define DIVIDE ((PEEK_CHR == '/' && NEXT_CHR) && SPACE)
-#define POWER ((PEEK_CHR == '^' && NEXT_CHR) && SPACE)
-#define LPAREN ((PEEK_CHR == '(' && NEXT_CHR) && SPACE)
-#define RPAREN ((PEEK_CHR == ')' && NEXT_CHR) && SPACE)
+#define SPACING (ACP_WHITESPACE(" \t\r\n"),1)
+#define PLUS (NEXT_CHR_IS('+') && SPACING)
+#define MINUS (NEXT_CHR_IS('-') && SPACING)
+#define TIMES (NEXT_CHR_IS('*') && SPACING)
+#define DIVIDE (NEXT_CHR_IS('/') && SPACING)
+#define POWER (NEXT_CHR_IS('^') && SPACING)
+#define LPAREN (NEXT_CHR_IS('(') && SPACING)
+#define RPAREN (NEXT_CHR_IS(')') && SPACING)
+#define REAL (ACP_FLOATING_POINT && SPACING)
+#define IDENTIFIER (ACP_IDENTIFIER && SPACING)
+#define INTEGER ((ACP_DECIMAL_INTEGER || ACP_HEX_INTEGER || ACP_OCTAL_INTEGER) && SPACING)
 
 int expr(double*);
 int term(double*);
@@ -110,7 +115,7 @@ int variable(double*);
 // expr <- term !.
 int expr(double* val)
 {
-  return SPACE && term(val) && !ANY;
+  return SPACING && term(val) && !ANY;
 }
 
 //  term <- factor ( ( '+' { c = '+'; } ? '-' { c='-'; } ) factor )*
@@ -167,7 +172,6 @@ int value(double* val)
     variable(val);
 }
 
-#define INTEGER (DECIMAL_INTEGER || HEX_INTEGER || OCTAL_INTEGER)
 // number <- REAL / INTEGER
 int number(double* val)
 {

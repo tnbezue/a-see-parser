@@ -6,18 +6,31 @@
 //void dtor_noop(void* ptr) { } // for objects that do not require a destructor
 
 //void ast_init(void* ptr,ast_dtor dtor,print_ast_element print,graph_ast_element graph,eval_ast_element eval)
-void ast_init(void* ptr,const ast_vtable_t* vt)
-{
-  ast_t* this = ptr;
-  this->vtable=vt;
-}
 
-ast_vtable_t unary_op_ast_vtable = { { &object_vtable,unary_op_ast_dtor },unary_op_ast_print, unary_op_ast_graph, unary_op_ast_eval};
+ast_class_table_t ast_class_table = {
+  .parent_class_table_=&object_class_table,
+  .class_name_="ast",
+  .type_size_=sizeof(ast_t),
+  .traits_=INSTANCE_HAS_CLASS_TABLE|TRIVALLY_DESTRUCTIBLE,
+  .default_ctor = ast_default_ctor,
+  .dtor = ast_dtor,
+  .copy_ctor = ast_copy_ctor,
+  .assign = ast_assign,
+  .compare = ast_compare,
+  .isa = object_isa,
+  .print = NULL,
+  .graph = NULL,
+  .eval = NULL
+};
+
+void unary_op_ast_default_ctor(void* ptr)
+{
+  ((unary_op_ast_t*)ptr)->left=NULL;
+}
 
 void unary_op_ast_ctor(void* ptr,int op,void* l)
 {
   unary_op_ast_t* this = ptr;
-  ast_init(ptr,&unary_op_ast_vtable);
   this->op=op;
   this->left=l;
 }
@@ -26,6 +39,14 @@ void unary_op_ast_dtor(void* uo)
 {
   const unary_op_ast_t* this = uo;
   DELETE(this->left);
+}
+
+void unary_op_ast_assign(void* d,const void* s)
+{
+  unary_op_ast_t* dst = d;
+  const unary_op_ast_t* src=s;
+  dst->op = src->op;
+  dst->left = src->left;
 }
 
 void unary_op_ast_print(const void* uo,FILE* o)
@@ -52,21 +73,45 @@ double unary_op_ast_eval(const void* uo)
   return value;
 }
 
-ast_vtable_t binary_op_ast_vtable = {{ &object_vtable,binary_op_ast_dtor}, binary_op_ast_print,binary_op_ast_graph,binary_op_ast_eval };
+unary_op_ast_class_table_t unary_op_ast_class_table = {
+  .parent_class_table_=(object_class_table_t*)&ast_class_table,
+  .class_name_="unary_op_ast",
+  .type_size_=sizeof(unary_op_ast_t),
+  .traits_=INSTANCE_HAS_CLASS_TABLE,
+  .default_ctor = unary_op_ast_default_ctor,
+  .dtor = unary_op_ast_dtor,
+  .copy_ctor = unary_op_ast_copy_ctor,
+  .assign = unary_op_ast_assign,
+  .compare = unary_op_ast_compare,
+  .isa = object_isa,
+  .print = unary_op_ast_print,
+  .graph = unary_op_ast_graph,
+  .eval = unary_op_ast_eval
+};
+
+void binary_op_ast_default_ctor(void* ptr)
+{
+  unary_op_ast_default_ctor(ptr);
+  ((binary_op_ast_t*)ptr)->right = NULL;
+}
+
 void binary_op_ast_ctor(void*ptr,void* l,char op,void* r)
 {
   binary_op_ast_t* this = ptr;
-  ast_init(this,&binary_op_ast_vtable);
-  this->left = l;
-  this->op = op;
+  unary_op_ast_ctor(this,op,l);
   this->right = r;
 }
 
 void binary_op_ast_dtor(void* bo)
 {
   binary_op_ast_t* this = bo;
-  DELETE(this->left);
   DELETE(this->right);
+}
+
+void binary_op_ast_assign(void *d,const void* s)
+{
+  unary_op_ast_assign(d,s);
+  ((binary_op_ast_t*)d)->right = ((const binary_op_ast_t*)s)->right;
 }
 
 void binary_op_ast_print(const void* bo,FILE* o)
@@ -75,6 +120,16 @@ void binary_op_ast_print(const void* bo,FILE* o)
   M(this->left,print,o);
   fprintf(o,"bop: %c\n",this->op);
   M(this->right,print,o);
+}
+
+void binary_op_ast_graph(const void* bo,FILE* o)
+{
+  const binary_op_ast_t* this = bo;
+  M(this->left,graph,o);
+  M(this->right,graph,o);
+  fprintf(o,"L%p [label= \"%c\"];\n",this,this->op);
+  fprintf(o,"L%p -> L%p;\n",this,this->left);
+  fprintf(o,"L%p -> L%p;\n",this,this->right);
 }
 
 double binary_op_ast_eval(const void* bo)
@@ -106,22 +161,31 @@ double binary_op_ast_eval(const void* bo)
   return lv;
 }
 
-void binary_op_ast_graph(const void* bo,FILE* o)
-{
-  const binary_op_ast_t* this = bo;
-  M(this->left,graph,o);
-  M(this->right,graph,o);
-  fprintf(o,"L%p [label= \"%c\"];\n",this,this->op);
-  fprintf(o,"L%p -> L%p;\n",this,this->left);
-  fprintf(o,"L%p -> L%p;\n",this,this->right);
-}
+binary_op_ast_class_table_t binary_op_ast_class_table = {
+  .parent_class_table_=(object_class_table_t*)&unary_op_ast_class_table,
+  .class_name_="binary_op_ast",
+  .type_size_=sizeof(binary_op_ast_t),
+  .traits_=INSTANCE_HAS_CLASS_TABLE,
+  .default_ctor = binary_op_ast_default_ctor,
+  .dtor = binary_op_ast_dtor,
+  .copy_ctor = binary_op_ast_copy_ctor,
+  .assign = binary_op_ast_assign,
+  .compare = binary_op_ast_compare,
+  .isa = object_isa,
+  .print = binary_op_ast_print,
+  .graph = binary_op_ast_graph,
+  .eval = binary_op_ast_eval
+};
 
-ast_vtable_t number_ast_vtable = {{ &object_vtable,number_ast_dtor},number_ast_print,number_ast_graph,number_ast_eval };
 void number_ast_ctor(void*ptr,double v)
 {
   number_ast_t* this = ptr;
-  ast_init(this,&number_ast_vtable);
   this->value = v;
+}
+
+void number_ast_assign(void* d,const void* s)
+{
+  ((number_ast_t*)d)->value = ((const number_ast_t*)s)->value;
 }
 
 void number_ast_print(const void* n,FILE* o)
@@ -141,12 +205,32 @@ double number_ast_eval(const void* n)
   return ((const number_ast_t*)n)->value;
 }
 
-ast_vtable_t variable_ast_vtable = {{ &object_vtable,variable_ast_dtor},variable_ast_print,variable_ast_graph,variable_ast_eval };
+number_ast_class_table_t number_ast_class_table = {
+  .parent_class_table_=(object_class_table_t*)&ast_class_table,
+  .class_name_="number_ast",
+  .type_size_=sizeof(number_ast_t),
+  .traits_=INSTANCE_HAS_CLASS_TABLE|TRIVALLY_DESTRUCTIBLE,
+  .default_ctor = number_ast_default_ctor,
+  .dtor = number_ast_dtor,
+  .copy_ctor = number_ast_copy_ctor,
+  .assign = number_ast_assign,
+  .compare = number_ast_compare,
+  .isa = object_isa,
+  .print = number_ast_print,
+  .graph = number_ast_graph,
+  .eval = number_ast_eval
+};
+
+
 void variable_ast_ctor(void* ptr,const variable_description_t* var)
 {
   variable_ast_t* this= ptr;
-  ast_init(this,&variable_ast_vtable);
   this->var = var;
+}
+
+void variable_ast_assign(void* d,const void* s)
+{
+  ((variable_ast_t*)d)->var = ((const variable_ast_t*)s)->var;
 }
 
 void variable_ast_print(const void* v,FILE* o)
@@ -166,12 +250,37 @@ double variable_ast_eval(const void* v)
   return *((const variable_ast_t*)v)->var->pvalue;
 }
 
-ast_vtable_t math_function_ast_vtable = { { &object_vtable,math_function_ast_dtor},
-        math_function_ast_print,math_function_ast_graph,math_function_ast_eval};
+variable_ast_class_table_t variable_ast_class_table = {
+  .parent_class_table_=(object_class_table_t*)&ast_class_table,
+  .class_name_="variable_ast",
+  .type_size_=sizeof(variable_ast_t),
+  .traits_=INSTANCE_HAS_CLASS_TABLE|TRIVALLY_DESTRUCTIBLE,
+  .default_ctor = variable_ast_default_ctor,
+  .dtor = variable_ast_dtor,
+  .copy_ctor = variable_ast_copy_ctor,
+  .assign = variable_ast_assign,
+  .compare = variable_ast_compare,
+  .isa = object_isa,
+  .print = variable_ast_print,
+  .graph = variable_ast_graph,
+  .eval = variable_ast_eval
+};
+
+void math_function_ast_default_ctor(void* ptr)
+{
+  unary_op_ast_default_ctor(ptr);
+  ((math_function_ast_t*)ptr)->func = NULL;
+}
+
+void math_function_ast_assign(void* d,const void* s)
+{
+  unary_op_ast_assign(d,s);
+  ((math_function_ast_t*)d)->func = ((const math_function_ast_t*)s)->func;
+}
+
 void math_function_ast_ctor(void* ptr,const math_function_description_t* func,void* l)
 {
   math_function_ast_t* this = ptr;
-  ast_init(this,&math_function_ast_vtable);
   this->func=func;
   this->left=l;
 }
@@ -196,3 +305,19 @@ double math_function_ast_eval(const void*mf)
   const math_function_ast_t* this = mf;
   return this->func->func(M(this->left,eval));
 }
+
+math_function_ast_class_table_t math_function_ast_class_table = {
+  .parent_class_table_=(object_class_table_t*)&unary_op_ast_class_table,
+  .class_name_="math_function_ast",
+  .type_size_=sizeof(math_function_ast_t),
+  .traits_=INSTANCE_HAS_CLASS_TABLE,
+  .default_ctor = math_function_ast_default_ctor,
+  .dtor = math_function_ast_dtor,
+  .copy_ctor = math_function_ast_copy_ctor,
+  .assign = math_function_ast_assign,
+  .compare = math_function_ast_compare,
+  .isa = object_isa,
+  .print = math_function_ast_print,
+  .graph = math_function_ast_graph,
+  .eval = math_function_ast_eval
+};

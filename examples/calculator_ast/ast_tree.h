@@ -19,135 +19,94 @@ typedef struct  {
 } variable_description_t;
 
 // use void* to avoid compiler warnings
-typedef void (*ast_dtor)(void*);
-typedef void (*print_ast_element)(const void*,FILE*);
-typedef void (*graph_ast_element)(const void*,FILE*);
-typedef double (*eval_ast_element)(const void*);
 
-typedef struct {
-  object_vtable_t;
-  print_ast_element print;
-  graph_ast_element graph;
-  eval_ast_element eval;
-} ast_vtable_t;
+CLASS(ast,object,
+  void(*print) (const void*,FILE*);
+  void(*graph) (const void*,FILE*);
+  double (*eval) (const void*);
+  ,
+  );
 
-#ifndef _MSC_VER
-typedef struct
-{
-} ast_instance_t;
-#endif
-typedef struct {
-  const ast_vtable_t* vtable;
-#ifndef _MSC_VER
-  ast_instance_t;
-#endif
-} ast_t;
+#define ast_default_ctor object_default_ctor
+#define ast_dtor object_dtor
+#define ast_copy_ctor object_copy_ctor
+#define ast_assign object_assign
+#define ast_compare object_compare
+CLASS(unary_op_ast,ast,
+  ,
+    int op;
+    ast_t* left;
+);
 
-void ast_init(void*,const ast_vtable_t*);
-
-typedef struct {
-  ast_vtable_t;
-} unary_op_ast_vtable_t;
-
-typedef struct {
-#ifndef _MSC_VER
-  ast_instance_t;
-#endif
-  ast_t* left;
-  int op;
-} unary_op_ast_instance_t;
-
-typedef struct {
-  unary_op_ast_vtable_t *vtable;
-  unary_op_ast_instance_t;
-} unary_op_ast_t;
-
+void unary_op_default_ctot(void*);
 void unary_op_ast_ctor(void*,int o,void* r);
 void unary_op_ast_dtor(void*);
+#define unary_op_ast_copy_ctor object_copy_ctor
+void unary_op_ast_assign(void*,const void*);
+#define unary_op_ast_compare object_compare
 void unary_op_ast_print(const void*,FILE*);
 void unary_op_ast_graph(const void*,FILE*);
 double unary_op_ast_eval(const void*);
 
-typedef struct {
-  unary_op_ast_vtable_t;
-} binary_op_ast_vtable_t;
-
-typedef struct {
-  unary_op_ast_instance_t;
+CLASS(binary_op_ast,unary_op_ast,
+,
   ast_t* right;
-} binary_op_ast_instance_t;
+);
 
-typedef struct {
-  binary_op_ast_vtable_t *vtable;
-  binary_op_ast_instance_t;
-} binary_op_ast_t;
-
+void binary_op_ast_default_ctor(void*);
 void binary_op_ast_ctor(void*,void* l,char o,void* r);
 void binary_op_ast_dtor(void*);
+#define binary_op_ast_copy_ctor object_copy_ctor
+void binary_op_ast_assign(void*,const void*);
+#define binary_op_ast_compare object_compare
 void binary_op_ast_print(const void*,FILE*);
 void binary_op_ast_graph(const void*,FILE*);
 double binary_op_ast_eval(const void*);
 
-typedef struct {
-  ast_vtable_t;
-} number_ast_vtable_t;
-
-typedef struct {
-#ifndef _MSC_VER
-  ast_instance_t;
-#endif
+CLASS(number_ast,ast,
+,
   double value;
-}number_ast_instance_t;
+);
 
-typedef struct {
-  number_ast_vtable_t* vtable;
-  number_ast_instance_t;
-} number_ast_t;
-
+#define number_ast_default_ctor object_default_ctor
 void number_ast_ctor(void*,double);
-#define number_ast_dtor dtor_noop
+#define number_ast_dtor object_dtor
+
+
 void number_ast_print(const void*,FILE*);
 void number_ast_graph(const void*,FILE*);
 double number_ast_eval(const void*);
+#define number_ast_copy_ctor object_copy_ctor
+void number_ast_assign(void*,const void*);
+#define number_ast_compare object_compare
 
-typedef struct {
-  ast_vtable_t;
-} variable_ast_vtable_t;
+CLASS(variable_ast,ast,
+,
+const variable_description_t* var;
+);
 
-typedef struct {
-#ifndef _MSC_VER
-  ast_instance_t;
-#endif
-  const variable_description_t* var;
-} variable_ast_instance_t;
-
-typedef struct {
-  variable_ast_vtable_t* vtable;
-  variable_ast_instance_t;
-} variable_ast_t;
-
+#define variable_ast_default_ctor object_default_ctor
 void variable_ast_ctor(void*,const variable_description_t*);
-#define variable_ast_dtor dtor_noop
+#define variable_ast_dtor object_dtor
+#define variable_ast_copy_ctor object_copy_ctor
+void variable_ast_assign(void*,const void*);
+#define variable_ast_compare object_compare
+
 void variable_ast_print(const void*,FILE*);
 void variable_ast_graph(const void*,FILE*);
 double variable_ast_eval(const void*);
 
-typedef struct {
-  unary_op_ast_vtable_t;
-} math_function_ast_vtable_t;
-
-typedef struct {
-  unary_op_ast_instance_t;
+CLASS(math_function_ast,unary_op_ast,
+,
   const math_function_description_t* func;
-} math_function_ast_instance_t;
+);
 
-typedef struct {
-  math_function_ast_vtable_t* vtable;
-  math_function_ast_instance_t;
-} math_function_ast_t;
-
+void math_function_ast_default_ctor(void*);
 void math_function_ast_ctor(void*,const math_function_description_t*,void*);
-#define math_function_ast_dtor unary_op_ast_dtor
+#define math_function_ast_dtor object_dtor
+#define math_function_ast_copy_ctor object_copy_ctor
+void math_function_ast_assign(void*,const void*);
+#define math_function_ast_compare object_compare
 void math_function_ast_print(const void*,FILE*);
 void math_function_ast_graph(const void*,FILE*);
 double math_function_ast_eval(const void*);

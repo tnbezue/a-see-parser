@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
+#define __USE_A_SEE_PARSER_PREDICATES__
 #include <a_see_parser/a_see_parser.h>
 #include "ast_tree.h"
 
@@ -80,13 +82,17 @@ const variable_description_t* get_variable(const char* name)
   return NULL;
 }
 
-#define PLUS ((PEEK_CHR == '+' && NEXT_CHR) && SPACE)
-#define MINUS ((PEEK_CHR == '-' && NEXT_CHR) && SPACE)
-#define TIMES ((PEEK_CHR == '*' && NEXT_CHR) && SPACE)
-#define DIVIDE ((PEEK_CHR == '/' && NEXT_CHR) && SPACE)
-#define POWER ((PEEK_CHR == '^' && NEXT_CHR) && SPACE)
-#define LPAREN ((PEEK_CHR == '(' && NEXT_CHR) && SPACE)
-#define RPAREN ((PEEK_CHR == ')' && NEXT_CHR) && SPACE)
+#define SPACING (ACP_WHITESPACE(" \t\r\n"),1)
+#define PLUS (NEXT_CHR_IS('+') && SPACING)
+#define MINUS (NEXT_CHR_IS('-') && SPACING)
+#define TIMES (NEXT_CHR_IS('*') && SPACING)
+#define DIVIDE (NEXT_CHR_IS('/') && SPACING)
+#define POWER (NEXT_CHR_IS('^') && SPACING)
+#define LPAREN (NEXT_CHR_IS('(') && SPACING)
+#define RPAREN (NEXT_CHR_IS(')') && SPACING)
+#define REAL (ACP_FLOATING_POINT && SPACING)
+#define IDENTIFIER (ACP_IDENTIFIER && SPACING)
+#define INTEGER ((ACP_DECIMAL_INTEGER || ACP_HEX_INTEGER || ACP_OCTAL_INTEGER) && SPACING)
 
 int expr(ast_t**);
 int term(ast_t**);
@@ -99,7 +105,7 @@ int variable(ast_t**);
 // expr = term !.
 int expr(ast_t** ast)
 {
-  return term(ast) && !ANY;
+  return SPACING && term(ast) && !ANY;
 }
 
 //  term <- factor ( ( '+' / '-' ) factor )*
@@ -109,7 +115,7 @@ int term(ast_t** last)
   ast_t* rast=NULL;
   return factor(last) &&
     ZERO_OR_MORE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(&rast),
-      *last = (ast_t*)NEW(binary_op_ast_t,binary_op_ast_ctor,*last,c,rast);
+      *last = (ast_t*)NEW_CTOR(binary_op_ast,binary_op_ast_ctor,*last,c,rast);
     ,);
 }
 
@@ -119,12 +125,12 @@ int factor(ast_t** last)
   int c;
   ast_t* rast=NULL;
   return RULE(((PLUS && (c='+')) || (MINUS && (c='-'))) && factor(last),
-      *last = (ast_t*)NEW(unary_op_ast_t,unary_op_ast_ctor,c,*last);
+      *last = (ast_t*)NEW_CTOR(unary_op_ast,unary_op_ast_ctor,c,*last);
     ,)
   ||
   (power(last) &&
         ZERO_OR_MORE(((TIMES && (c='*')) || (DIVIDE && (c='/'))) && power(&rast),
-          *last = (ast_t*)NEW(binary_op_ast_t,binary_op_ast_ctor,*last,c,rast);
+          *last = (ast_t*)NEW_CTOR(binary_op_ast,binary_op_ast_ctor,*last,c,rast);
         ,));
 }
 
@@ -133,7 +139,7 @@ int power(ast_t** last)
 {
   ast_t* rast=NULL;
   return value(last) && ZERO_OR_MORE(POWER && power(&rast),
-    *last = (ast_t*) NEW(binary_op_ast_t,binary_op_ast_ctor,*last,'^',rast);
+    *last = (ast_t*) NEW_CTOR(binary_op_ast,binary_op_ast_ctor,*last,'^',rast);
   ,);
 }
 
@@ -153,7 +159,6 @@ int value(ast_t** ast)
     variable(ast);
 }
 
-#define INTEGER (DECIMAL_INTEGER || HEX_INTEGER || OCTAL_INTEGER)
 // number <- REAL / INTEGER
 int number(ast_t** ast)
 {
@@ -166,7 +171,7 @@ int number(ast_t** ast)
       d=atof(nstr);
     else
       d=strtol(nstr,NULL,0);
-    *ast = (ast_t*) NEW(number_ast_t,number_ast_ctor,d);
+    *ast = (ast_t*) NEW_CTOR(number_ast,number_ast_ctor,d);
   ,);
 }
 
@@ -180,7 +185,7 @@ int function(ast_t** ast)
           && term(&fterm) && (rc = 1) && RPAREN,
           const math_function_description_t* func= get_math_function(id);
           if(func)
-            *ast = (ast_t*) NEW(math_function_ast_t,math_function_ast_ctor,func,fterm);
+            *ast = (ast_t*) NEW_CTOR(math_function_ast,math_function_ast_ctor,func,fterm);
           else {
             printf("Function %s is undefined\n",id);
             exit(1);
@@ -196,28 +201,37 @@ int variable(ast_t** ast)
     char id[126];
     CAPTURE_TEXT(id,128);
     const variable_description_t *var = get_variable(id);
-    *ast = (ast_t*)NEW(variable_ast_t,variable_ast_ctor,var);
+    *ast = (ast_t*)NEW_CTOR(variable_ast,variable_ast_ctor,var);
   ,);
+}
+
+#define fMin -10
+#define fMax 10
+double fRand()
+{
+    double f = (double)rand() / RAND_MAX;
+    return fMin + f * (fMax - fMin);
 }
 
 int main(int argc,char* argv[])
 {
   int i;
+  srand(time(NULL));
   for(i=1;i<argc;i++) {
     ast_t* ast=NULL;
     SET_PARSE_STRING(argv[i]);
     if(expr(&ast)) {
-      x = 12.5;
-      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->vtable->eval(ast));
-      x = -2.75;
-      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->vtable->eval(ast));
-      x = 0.03;
-      printf("(x=%lg) %s = %lg\n",x,argv[i],ast->vtable->eval(ast));
+      x = fRand();
+      printf("(x=%lg) %s = %lg\n",x,argv[i],M(ast,eval));
+      x = fRand();
+      printf("(x=%lg) %s = %lg\n",x,argv[i],M(ast,eval));
+      x = fRand();
+      printf("(x=%lg) %s = %lg\n",x,argv[i],M(ast,eval));
       char fname[32] = "Prob";
       sprintf(fname+4,"%d.gv",i);
       FILE* f = fopen(fname,"w");
       fprintf(f,"digraph \"%s\" {\n",argv[i]);
-      ast->vtable->graph(ast,f);
+      M(ast,graph,f);
       fprintf(f,"}\n");
       fclose(f);
       DELETE(ast);
