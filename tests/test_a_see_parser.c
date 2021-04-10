@@ -29,25 +29,26 @@ IMPLEMENT_DEFAULT_A_SEE_PARSER;
 void test_default()
 {
   TESTCASE("Init");
-  TEST("PTR null",__global_a_see_parser_pointer__->ptr_==NULL);
-  TEST("Capture begin is  null",__global_a_see_parser_pointer__->capture_.begin_==NULL);
-  TEST("Capture end is  null",__global_a_see_parser_pointer__->capture_.end_==NULL);
-  TEST("FLAGS are default",__global_a_see_parser_pointer__->flags_ == (A_SEE_PARSER_DEFAULT_FLAGS));
+  TEST("PTR null",__global->ptr_==NULL);
+  TEST("Capture begin is  null",__global->capture_.begin_==NULL);
+  TEST("Capture end is  null",__global->capture_.end_==NULL);
 }
 
 
 typedef struct {
   const char* str;
   unsigned int len;
+  unsigned int len_nested;
 } string_length_t;
 
 void test_c_comment()
 {
   char msg[256];
   string_length_t test_data[] = {
-    { " /* this\nis\na\ncomment */ this is not", 0 },
-    { "/* this\nis\na\ncomment */ this is not" , 23},
-    {  "/* this\nis/*\na\ncomment */ this is also */ but this isn't", 41},
+    { " /* this\nis\na\ncomment */ this is not", 0,0 },
+    { "/* this\nis\na\ncomment */ this is not" , 23,23},
+    {  "/* this\nis/*\na\ncomment */ this is also */ but this isn't",25, 41},
+    {  "/* this\nis/*\na\ncomment */ this is not",25, 0},
     { NULL, 0}
   };
   TESTCASE("C Comment");
@@ -56,10 +57,18 @@ void test_c_comment()
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" doesn't match",isl->str);
-      TEST(msg,a_see_parser_c_comment(__global_a_see_parser_pointer__)==0);
+      TEST(msg,a_see_parser_c_comment(__global)==0);
     } else {
       sprintf(msg,"\"%s\" -- comment length is %d",isl->str,isl->len);
-      TEST(msg,a_see_parser_c_comment(__global_a_see_parser_pointer__)==isl->len);
+      TEST(msg,a_see_parser_c_comment(__global)==isl->len);
+    }
+    SET_PARSE_STRING(isl->str);
+    if(isl->len_nested == 0) {
+      sprintf(msg,"\"%s\" doesn't match",isl->str);
+      TEST(msg,a_see_parser_nested_c_comment(__global)==0);
+    } else {
+      sprintf(msg,"\"%s\" -- comment length is %d",isl->str,isl->len_nested);
+      TEST(msg,a_see_parser_nested_c_comment(__global)==isl->len_nested);
     }
   }
 }
@@ -68,7 +77,7 @@ void test_cpp_comment()
 {
   string_length_t test_data[] = {
     {" // this is a comment \nthis is not" , 0},
-    {"// this is a comment \n this is not" , 22},
+    {"// this is a comment \n this is not" , 21},
     { NULL, 0 },
   };
   char msg[256];
@@ -79,10 +88,10 @@ void test_cpp_comment()
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" doesn't match",isl->str);
-      TEST(msg,a_see_parser_cpp_comment(__global_a_see_parser_pointer__) == 0);
+      TEST(msg,a_see_parser_cpp_comment(__global) == 0);
     } else {
       sprintf(msg,"\"%s\" -- comment length is %d",isl->str,isl->len);
-      TEST(msg,(nc=a_see_parser_cpp_comment(__global_a_see_parser_pointer__)) == isl->len);
+      TEST(msg,(nc=a_see_parser_cpp_comment(__global)) == isl->len);
       printf("%d\n",nc);
     }
   }
@@ -105,10 +114,35 @@ void test_integer()
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" fails",isl->str);
-      TEST(msg,a_see_parser_decimal_integer(__global_a_see_parser_pointer__) == 0);
+      TEST(msg,a_see_parser_decimal_integer(__global) == 0);
     } else {
       sprintf(msg,"\"%s\" len == %d",isl->str,isl->len);
-      TEST(msg,a_see_parser_decimal_integer(__global_a_see_parser_pointer__));
+      TEST(msg,a_see_parser_decimal_integer(__global));
+    }
+  }
+}
+
+void test_binary_integer()
+{
+  string_length_t test_data[] = {
+    { " 0b10", 0},
+    { "0b10", 4},
+    { "0b011000100111000101", 20 },
+    { "0b011", 5},
+    { "0b021", 3},
+    { NULL, 0 },
+  };
+  char msg[256];
+  TESTCASE("Binary Integer");
+  string_length_t* isl = test_data;
+  for(;isl->str;isl++) {
+    SET_PARSE_STRING(isl->str);
+    if(isl->len == 0) {
+      sprintf(msg,"\"%s\" fails",isl->str);
+      TEST(msg,a_see_parser_binary_integer(__global)==0);
+    } else {
+      sprintf(msg,"\"%s\" len == %d",isl->str,isl->len);
+      TEST(msg,a_see_parser_binary_integer(__global));
     }
   }
 }
@@ -129,10 +163,10 @@ void test_octal_integer()
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" fails",isl->str);
-      TEST(msg,a_see_parser_octal_integer(__global_a_see_parser_pointer__)==0);
+      TEST(msg,a_see_parser_octal_integer(__global)==0);
     } else {
       sprintf(msg,"\"%s\" len == %d",isl->str,isl->len);
-      TEST(msg,a_see_parser_octal_integer(__global_a_see_parser_pointer__));
+      TEST(msg,a_see_parser_octal_integer(__global));
     }
   }
 }
@@ -150,14 +184,17 @@ void test_hex_integer()
   char msg[256];
   TESTCASE("Hex Integer");
   string_length_t* isl = test_data;
+  int len;
   for(;isl->str;isl++) {
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" fails",isl->str);
-      TEST(msg,a_see_parser_hex_integer(__global_a_see_parser_pointer__)==0);
+      TEST(msg,(len=a_see_parser_hex_integer(__global))==0);
+      printf("%d\n",len);
     } else {
       sprintf(msg,"\"%s\" len == %d",isl->str,isl->len);
-      TEST(msg,a_see_parser_hex_integer(__global_a_see_parser_pointer__));
+      TEST(msg,(len=a_see_parser_hex_integer(__global))==isl->len);
+      printf("%d\n",len);
     }
   }
 }
@@ -184,10 +221,10 @@ void test_floating_point()
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" fails",isl->str);
-      TEST(msg,a_see_parser_floating_point(__global_a_see_parser_pointer__)==0);
+      TEST(msg,a_see_parser_floating_point(__global)==0);
     } else {
       sprintf(msg,"\"%s\" len == %d",isl->str,isl->len);
-      TEST(msg,a_see_parser_floating_point(__global_a_see_parser_pointer__));
+      TEST(msg,a_see_parser_floating_point(__global));
     }
   }
 }
@@ -211,10 +248,10 @@ void test_quoted_string()
     SET_PARSE_STRING(isl->str);
     if(isl->len == 0) {
       sprintf(msg,"\"%s\" -- doesn't match",isl->str);
-      TEST(msg,a_see_parser_double_quoted_string(__global_a_see_parser_pointer__)==0);
+      TEST(msg,a_see_parser_double_quoted_string(__global)==0);
     } else {
       sprintf(msg,"\"%s\" -- match length = %d",isl->str,isl->len);
-      TEST(msg,a_see_parser_double_quoted_string(__global_a_see_parser_pointer__));
+      TEST(msg,a_see_parser_double_quoted_string(__global));
 //      puts(YYTEXT(acp));
     }
   }
@@ -310,10 +347,10 @@ void test_range()
     SET_PARSE_STRING(issi->str);
     if(issi->found) {
       sprintf(msg,"Next char from \"%s\" found in \"%s\"",issi->str,issi->range);
-      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range));
+      TEST(msg,a_see_parser_range(__global,issi->range));
     } else {
       sprintf(msg,"Next char from \"%s\" not found in \"%s\"",issi->str,issi->range);
-      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range)==0);
+      TEST(msg,a_see_parser_range(__global,issi->range)==0);
     }
   }
 }
@@ -336,10 +373,10 @@ void test_not_range()
     SET_PARSE_STRING(issi->str);
     if(issi->found) {
       sprintf(msg,"Next char from \"%s\" not found in \"%s\"",issi->str,issi->range);
-      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range));
+      TEST(msg,a_see_parser_range(__global,issi->range));
     } else {
       sprintf(msg,"Next char from \"%s\" found in \"%s\"",issi->str,issi->range);
-      TEST(msg,a_see_parser_range(__global_a_see_parser_pointer__,issi->range)==0);
+      TEST(msg,a_see_parser_range(__global,issi->range)==0);
     }
   }
 }
@@ -381,9 +418,9 @@ void test_simple_rule()
   const char* str = "abc";
   SET_PARSE_STRING(str);
   int rc = simple_rule_test_1('b');
-  TEST("Simple rule NEXT_CHR in \"abc\" equals 'b' fails",rc == 0 && __global_a_see_parser_pointer__->ptr_==str);
+  TEST("Simple rule NEXT_CHR in \"abc\" equals 'b' fails",rc == 0 && __global->ptr_==str);
   rc = simple_rule_test_1('a');
-  TEST("Simple rule NEXT_CHR in \"abc\" equals 'a' succeeds",rc == 1 && __global_a_see_parser_pointer__->ptr_==(str+1));
+  TEST("Simple rule NEXT_CHR in \"abc\" equals 'a' succeeds",rc == 1 && __global->ptr_==(str+1));
 }
 
 int true_false=0;
@@ -398,9 +435,9 @@ void test_rule()
   const char* str = "abc";
   SET_PARSE_STRING(str);
   int rc = rule_test_1('b');
-  TEST("Rule NEXT_CHR in \"abc\" equals 'b' fails",rc == 0 && __global_a_see_parser_pointer__->ptr_==str && true_false == 0);
+  TEST("Rule NEXT_CHR in \"abc\" equals 'b' fails",rc == 0 && __global->ptr_==str && true_false == 0);
   rc = rule_test_1('a');
-  TEST("Rule NEXT_CHR in \"abc\" equals 'a' succeeds",rc == 1 && __global_a_see_parser_pointer__->ptr_==(str+1) && true_false == 1);
+  TEST("Rule NEXT_CHR in \"abc\" equals 'a' succeeds",rc == 1 && __global->ptr_==(str+1) && true_false == 1);
 }
 
 int count=0;
@@ -473,8 +510,8 @@ void test_optional()
   TESTCASE("OPTIONAL");
   const char* str = "abc";
   SET_PARSE_STRING(str);
-  TEST("Optional NEXT_CHR 'b' in \"abc\"",optional_1('b') && __global_a_see_parser_pointer__->ptr_==str && true_false == 0);
-  TEST("Optional NEXT_CHR 'a' in \"abc\"",optional_1('a') && __global_a_see_parser_pointer__->ptr_==(str+1) && true_false == 1);
+  TEST("Optional NEXT_CHR 'b' in \"abc\"",optional_1('b') && __global->ptr_==str && true_false == 0);
+  TEST("Optional NEXT_CHR 'a' in \"abc\"",optional_1('a') && __global->ptr_==(str+1) && true_false == 1);
 }
 
 int non_consuming_test_1(int ch)
@@ -489,7 +526,7 @@ void test_non_consuming_rule()
   SET_PARSE_STRING(str);
   count = 0;
   TEST("5 characters consummed and pointer remains at beginning of string",
-      non_consuming_test_1('a') && count == 5 && __global_a_see_parser_pointer__->ptr_==str);
+      non_consuming_test_1('a') && count == 5 && __global->ptr_==str);
 }
 
 test_function tests[] =
@@ -498,6 +535,7 @@ test_function tests[] =
   test_c_comment,
   test_cpp_comment,
   test_integer,
+  test_binary_integer,
   test_octal_integer,
   test_hex_integer,
   test_floating_point,

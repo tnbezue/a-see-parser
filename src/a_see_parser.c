@@ -25,113 +25,8 @@ int a_see_parser_next_chr(a_see_parser_t* acp)
   int c = A_SEE_PARSER_PEEK_CHR(acp);
   if(c) {
     acp->ptr_++;
-    if(c=='\n')
-      acp->line_number_++;
   }
   return c;
-}
-
-static const char* whitespace_chars = " \t";
-static const char* whitespace_chars_with_eol = " \t\r\n";
-
-int a_see_parser_whitespace(a_see_parser_t* acp,int include_new_line_as_whitespace)
-{
-  const char* ws_chars = include_new_line_as_whitespace ? whitespace_chars_with_eol : whitespace_chars;
-  int c,nchar=0;
-  while((c=A_SEE_PARSER_PEEK_CHR(acp))) {
-    if(strchr(ws_chars,c)==NULL)
-      break;
-    nchar++;
-    a_see_parser_next_chr(acp);
-  }
-  return nchar;
-}
-
-int a_see_parser_eol(a_see_parser_t* acp)
-{
-  int rc = 0;
-  int c=A_SEE_PARSER_PEEK_CHR(acp);
-  if(c=='\r') {
-    // Mac or windows
-    rc = 1;
-    A_SEE_PARSER_NEXT_CHR(acp);
-    c=A_SEE_PARSER_PEEK_CHR(acp);
-    if(c == '\n') // WINDOWS
-       A_SEE_PARSER_NEXT_CHR(acp);
-  } else if(c=='\n') { // Linux or Unix
-    A_SEE_PARSER_NEXT_CHR(acp);
-    rc = 1;
-  }
-  return rc;
-/*  return A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_NEXT_CHR(acp) == '\r' && A_SEE_PARSER_NEXT_CHR(acp) == '\n')
-    ||
-    A_SEE_PARSER_SIMPLE_RULE(acp,(c=A_SEE_PARSER_NEXT_CHR(acp)) == '\n' || c == '\r');*/
-}
-
-int a_see_parser_char_sequence(a_see_parser_t*acp,const char*str)
-{
-  return A_SEE_PARSER_SIMPLE_RULE(acp,
-    ({
-      int rc=0;
-      for(;*str && *str == A_SEE_PARSER_NEXT_CHR(acp);str++);
-      if(*str == 0)
-        rc=1;
-      rc;
-    })
-  );
-}
-
-int a_see_parser_delimited_comment(a_see_parser_t*acp,const char* start,const char* end,int nested)
-{
-  int len=0;
-  const char* ptr = acp->ptr_;
-  A_SEE_PARSER_SIMPLE_RULE(acp,
-      A_SEE_PARSER_CHAR_SEQUENCE(acp,start) && A_SEE_PARSER_ZERO_OR_MORE(acp,!A_SEE_PARSER_CHAR_SEQUENCE(acp,end) &&
-        ((nested && a_see_parser_delimited_comment(acp,start,end,nested)) || 1) &&
-        A_SEE_PARSER_NEXT_CHR(acp),,) && A_SEE_PARSER_CHAR_SEQUENCE(acp,end)
-  );
-  len = acp->ptr_-ptr;
-  return len;
-}
-
-int a_see_parser_one_line_comment(a_see_parser_t*acp,const char* start)
-{
-  int len=0;
-  const char* ptr = acp->ptr_;
-  A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_CHAR_SEQUENCE(acp,start) && A_SEE_PARSER_ZERO_OR_MORE(acp,!A_SEE_PARSER_END_OF_LINE(acp) && A_SEE_PARSER_NEXT_CHR(acp),,)
-    && A_SEE_PARSER_END_OF_LINE(acp)
-  );
-  len=acp->ptr_-ptr;
-  return len;
-}
-
-int a_see_parser_space(a_see_parser_t* acp)
-{
-  A_SEE_PARSER_ZERO_OR_MORE(acp,a_see_parser_whitespace(acp,acp->flags_&INCLUDE_EOL_IN_WHITESPACE)
-    || a_see_parser_c_comment(acp) || a_see_parser_cpp_comment(acp),,);
-  return 1;
-}
-
-int a_see_parser_capture_length(a_see_parser_t* acp)
-{
-  int len = 0;
-  if(acp->capture_.end_ && acp->capture_.begin_ && acp->capture_.end_>acp->capture_.begin_)
-    len = acp->capture_.end_-acp->capture_.begin_;
-  return len;
-}
-
-int a_see_parser_capture_text(a_see_parser_t* acp,char* str,unsigned int len)
-{
-  if(str && len) {
-    unsigned int length =A_SEE_PARSER_CAPTURE_LENGTH(acp);
-    if(length) {
-      if(len < length)
-        length = len;
-      strncpy(str,acp->capture_.begin_,length);
-    }
-    str[length]=0;
-  }
-  return 1;
 }
 
 // Works like [-a-zA-Z0-9]
@@ -170,126 +65,248 @@ int a_see_parser_range(a_see_parser_t* acp,const char* range)
   return rc;
 }
 
-#define A_SEE_PARSER_EXPONENT  A_SEE_PARSER_RANGE(acp,"eE") && \
-  A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_RANGE(acp,"-+"),,) && \
-  A_SEE_PARSER_ONE_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,)
+int a_see_parser_char_sequence(a_see_parser_t*acp,const char*str)
+{
+  const char* ptr=acp->ptr_;
+  for(;*str && *ptr && *str == *ptr;str++,ptr++);
+  int rc=0;
+  if(*str==0) {
+    acp->ptr_=ptr;
+    rc=1;
+  }
+  return rc;
+}
 
-// [0-9]+ '.' [0-9]*
-#define A_SEE_PARSER_FLOAT1 A_SEE_PARSER_ONE_OR_MORE(acp, \
-        A_SEE_PARSER_RANGE(acp,"0-9"),,) && A_SEE_PARSER_NEXT_CHR(acp)=='.' && \
-        A_SEE_PARSER_ZERO_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,)
+int a_see_parser_capture_length(a_see_parser_t* acp)
+{
+  int len = 0;
+  if(acp->capture_.end_ && acp->capture_.begin_ && acp->capture_.end_>acp->capture_.begin_)
+    len = acp->capture_.end_-acp->capture_.begin_;
+  return len;
+}
 
-// [0-9]+ ('.' [0-9]*)?
-#define A_SEE_PARSER_FLOAT2 A_SEE_PARSER_ONE_OR_MORE(acp, \
-        A_SEE_PARSER_RANGE(acp,"0-9"),,) && A_SEE_PARSER_OPTIONAL(acp, \
-        A_SEE_PARSER_NEXT_CHR(acp)=='.' && \
-        A_SEE_PARSER_ZERO_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,),,)
+int a_see_parser_capture_text(a_see_parser_t* acp,char* str,unsigned int len)
+{
+  if(str && len) {
+    unsigned int length =A_SEE_PARSER_CAPTURE_LENGTH(acp);
+    if(length) {
+      if(len < length)
+        length = len;
+      strncpy(str,acp->capture_.begin_,length);
+    }
+    str[length]=0;
+  }
+  return 1;
+}
 
-// [0-9]* '.' [0-9]+ ([eE] [0-9]+)?
-#define A_SEE_PARSER_FLOAT3 A_SEE_PARSER_ZERO_OR_MORE(acp, \
-        A_SEE_PARSER_RANGE(acp,"0-9"),,) && A_SEE_PARSER_NEXT_CHR(acp)=='.' && \
-        A_SEE_PARSER_ONE_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,)
+int a_see_parser_whitespace(a_see_parser_t* acp,const char* ws_chars)
+{
+  const char* ptr=acp->ptr_;
+  for(;*ptr && strchr(ws_chars,*ptr);ptr++);
+  int rc=0;
+  if(ptr > acp->ptr_) {
+    rc = 1;
+    acp->ptr_=ptr;
+  }
+  return rc;
+}
 
-//#define __FLOATING_POINT_OPTION_A__
+int a_see_parser_eol(a_see_parser_t* acp)
+{
+  int rc = 0;
+  int c=A_SEE_PARSER_PEEK_CHR(acp);
+  if(c=='\r') {
+    // Mac or windows
+    rc = 1;
+    a_see_parser_next_chr(acp);
+    c=A_SEE_PARSER_PEEK_CHR(acp);
+    if(c == '\n') // it's WINDOWS
+       a_see_parser_next_chr(acp);
+  } else if(c=='\n') { // Linux or Unix
+    a_see_parser_next_chr(acp);
+    rc = 1;
+  }
+  return rc;
+}
+
+int a_see_parser_delimited_comment(a_see_parser_t*acp,const char* start,const char* end,int nested)
+{
+  int len=0;
+  const char* ptr = acp->ptr_;
+  const char* start_temp = start;
+  for(;*start_temp && *ptr && *start_temp == *ptr;start_temp++,ptr++);
+  if(*start_temp == 0) {
+    int level=1;
+    while(*ptr && level) {
+      const char* ptr_temp = ptr;
+      const char* end_temp = end;
+      for(;*end_temp && *ptr && *end_temp == *ptr;end_temp++,ptr++);
+      if(*end_temp == 0) {
+        level--;
+      } else if(nested) {
+        for(ptr=ptr_temp,start_temp=start;*start_temp && *ptr && *start_temp==*ptr;start_temp++,ptr++);
+        if(*start_temp == 0) {
+          level++;
+        } else {
+          ptr = ptr_temp+1;
+        }
+      } else {
+          ptr = ptr_temp+1;
+      }
+    }
+    if(level == 0) {
+      len = ptr - acp->ptr_;
+      acp->ptr_=ptr;
+    }
+  }
+  return len;
+}
+
+int a_see_parser_one_line_comment(a_see_parser_t*acp,const char* start)
+{
+  int len=0;
+  const char* ptr = acp->ptr_;
+  for(;*start && *ptr && *start == *ptr;start++,ptr++);
+  /* if the last character in sequence if alpha numeric, then next character must be non alpha numeric */
+  if(*start == 0) {
+    if(!isalnum(*(start-1)) || !(isalnum(*ptr) || *ptr == '_')) {
+      for(;*ptr && *ptr != '\r' && *ptr != '\n';ptr++);
+    }
+    len=ptr-acp->ptr_;
+    acp->ptr_=ptr;
+  }
+  return len;
+}
+
 int a_see_parser_floating_point(a_see_parser_t*acp)
 {
-#ifdef __FLOATING_POINT_OPTION_A__
-  return A_SEE_PARSER_CAPTURE_ON(acp) &&
-    (
-        A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT1 &&
-            A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_EXPONENT,,))
-      ||
-      A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT2 &&
-          A_SEE_PARSER_EXPONENT)
-      ||
-      A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_FLOAT3 &&
-          A_SEE_PARSER_OPTIONAL(acp,A_SEE_PARSER_EXPONENT,,))
-    ) && A_SEE_PARSER_CAPTURE_OFF(acp) && A_SEE_PARSER_SPACE(acp);
-
-#else
-  return A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_CAPTURE_ON(acp) &&
-      ({
-        int c;
-        int has_whole = 0;
-        int has_decimal_point = 0;
-        int has_decimal_digits=0;
-        int has_exponent=0; // 0 - not specified, -1 -- e (or E) without dightis, 1 -- valid
-        for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));has_whole = 1,A_SEE_PARSER_NEXT_CHR(acp));
-        if (A_SEE_PARSER_NEXT_CHR_IS(acp,'.')) {
-          has_decimal_point = 1;
-          for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp),has_decimal_digits=1);
-        }
-        if(has_whole || has_decimal_digits ) {
-          if((c=A_SEE_PARSER_PEEK_CHR(acp)) == 'e' || c == 'E') {
-            has_exponent = -1;
-            A_SEE_PARSER_NEXT_CHR(acp);
-            if((c=A_SEE_PARSER_PEEK_CHR(acp)) == '+' || c == '-') {
-              A_SEE_PARSER_NEXT_CHR(acp);
-            }
-            for(;isdigit(A_SEE_PARSER_PEEK_CHR(acp));A_SEE_PARSER_NEXT_CHR(acp)) has_exponent=1;
-          }
-        }
-        (has_exponent >= 0) && ((has_whole && has_exponent)
-              || (has_whole && has_decimal_point) || has_decimal_digits);
-      }) && A_SEE_PARSER_CAPTURE_OFF(acp) && A_SEE_PARSER_SPACE(acp));
-#endif
+  const char* ptr = acp->ptr_;
+  int has_whole = 0;
+  int has_decimal_point = 0;
+  int has_decimal_digits=0;
+  int has_exponent=0; // 0 - not specified, -1 -- e (or E) without digits, 1 -- valid
+  for(;(*ptr >= '0' && *ptr <= '9');has_whole = 1,ptr++);
+  if (*ptr == '.') {
+    has_decimal_point = 1;
+    for(ptr++;(*ptr >= '0' && *ptr <= '9');ptr++,has_decimal_digits=1);
+  }
+  if(has_whole || has_decimal_digits ) {
+    if(*ptr == 'e' || *ptr == 'E') {
+      has_exponent = -1;
+      ptr++;
+      if(*ptr == '+' || *ptr == '-') {
+        ptr++;
+      }
+      for(;(*ptr >= '0' && *ptr <= '9');ptr++,has_exponent=1);
+    }
+  }
+  int rc = (has_exponent >= 0) && ((has_whole && has_exponent)
+        || (has_whole && has_decimal_point) || has_decimal_digits);
+  if(rc) {
+    acp->capture_.begin_=acp->ptr_;
+    acp->ptr_=ptr;
+    acp->capture_.end_=acp->ptr_;
+  }
+  return rc;
 }
 
 int a_see_parser_decimal_integer(a_see_parser_t*acp)
 {
-  return A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_CAPTURE_ON(acp) &&
-      A_SEE_PARSER_RANGE(acp,"1-9") &&  A_SEE_PARSER_ZERO_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,)) && A_SEE_PARSER_CAPTURE_OFF(acp) && a_see_parser_space(acp);
+  const char* ptr = acp->ptr_;
+  int rc=0;
+  if(*ptr >= '1' && *ptr <= '9') {
+    rc=1;
+    for(ptr++;*ptr >= '0' && *ptr <= '9';ptr++);
+    acp->capture_.begin_=acp->ptr_;
+    acp->ptr_=ptr;
+    acp->capture_.end_=acp->ptr_;
+  }
+  return rc;
 }
 
 int a_see_parser_octal_integer(a_see_parser_t*acp)
 {
-  return A_SEE_PARSER_CAPTURE_ON(acp) && A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_NEXT_CHR(acp)=='0' &&
-      A_SEE_PARSER_ZERO_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9"),,)) && A_SEE_PARSER_CAPTURE_OFF(acp) && a_see_parser_space(acp);
+  const char* ptr = acp->ptr_;
+  int rc=0;
+  if(*ptr == '0') {
+    rc=1;
+    for(ptr++;*ptr >= '0' && *ptr <= '7';ptr++);
+    acp->capture_.begin_=acp->ptr_;
+    acp->ptr_=ptr;
+    acp->capture_.end_=acp->ptr_;
+  }
+  return rc;
 }
 
 int a_see_parser_hex_integer(a_see_parser_t*acp)
 {
-  int c;
-  return A_SEE_PARSER_CAPTURE_ON(acp) && A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_NEXT_CHR(acp)=='0' && ((c=A_SEE_PARSER_NEXT_CHR(acp)) == 'x' || c=='X')
-        && A_SEE_PARSER_ONE_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"0-9a-fA-F"),,)) && A_SEE_PARSER_CAPTURE_OFF(acp) && a_see_parser_space(acp);
+  const char* ptr = acp->ptr_;
+  int len=0;
+  if(*ptr == '0' && toupper(*(ptr+1)) == 'X') {
+    for(ptr+=2;(*ptr >= '0' && *ptr <= '9') ||
+          (toupper(*ptr) >= 'A' && toupper(*ptr) <= 'F');ptr++);
+    len = ptr - acp->ptr_;
+    if(len > 2) {
+      acp->capture_.begin_=acp->ptr_;
+      acp->ptr_=ptr;
+      acp->capture_.end_=acp->ptr_;
+    } else
+      len=0;
+  }
+  return len;
+}
+
+int a_see_parser_binary_integer(a_see_parser_t*acp)
+{
+  const char* ptr = acp->ptr_;
+  int len=0;
+  if(*ptr == '0' && toupper(*(ptr+1)) == 'B') {
+    for(ptr+=2;(*ptr == '0' || *ptr == '1');ptr++);
+    len = ptr - acp->ptr_;
+    if(len > 2) {
+      acp->capture_.begin_=acp->ptr_;
+      acp->ptr_=ptr;
+      acp->capture_.end_=acp->ptr_;
+    } else
+      len=0;
+  }
+  return len;
 }
 
 int a_see_parser_ident(a_see_parser_t* acp)
 {
-  return A_SEE_PARSER_CAPTURE_ON(acp) && A_SEE_PARSER_SIMPLE_RULE(acp,
-         A_SEE_PARSER_RANGE(acp,"_a-zA-Z") &&
-        A_SEE_PARSER_ZERO_OR_MORE(acp,A_SEE_PARSER_RANGE(acp,"_a-zA-Z0-9"),,))
-        && A_SEE_PARSER_CAPTURE_OFF(acp) && a_see_parser_space(acp);
+  const char* ptr = acp->ptr_;
+  int rc=0;
+  if((*ptr >= 'a' && *ptr <= 'z') || *ptr == '_' || (*ptr >= 'A' && *ptr <= 'Z')) {
+    for(ptr++;(*ptr >= 'a' && *ptr <= 'z') || *ptr == '_' ||
+          (*ptr >= '0' && *ptr <= '9') || (*ptr >= 'A' && *ptr <= 'Z');ptr++);
+    acp->capture_.begin_=acp->ptr_;
+    acp->ptr_=ptr;
+    acp->capture_.end_=acp->ptr_;
+    rc = 1;
+  }
+  return rc;
 }
 
 /*
   Allow for escaped characters.
 */
-#define __QUOTED_STRING_OPTION_A__
 int a_see_parser_quoted_string(a_see_parser_t* acp,int ch)
 {
-#ifdef __QUOTED_STRING_OPTION_A__
-  int c;
-  return A_SEE_PARSER_CAPTURE_ON(acp) && A_SEE_PARSER_SIMPLE_RULE(acp,A_SEE_PARSER_NEXT_CHR(acp) == ch &&
-        A_SEE_PARSER_ZERO_OR_MORE(acp,(c=A_SEE_PARSER_NEXT_CHR(acp))!=ch && c!=0 && ((c=='\\' && A_SEE_PARSER_NEXT_CHR(acp))  || 1),,))
-       && A_SEE_PARSER_NEXT_CHR(acp) == '"' && A_SEE_PARSER_CAPTURE_OFF(acp);
-#else
+  const char* ptr = acp->ptr_;
   int rc=0;
-  return A_SEE_PARSER_CAPTURE_ON(acp) && A_SEE_PARSER_SIMPLE_RULE(acp,
-    ({
-      if(A_SEE_PARSER_NEXT_CHR(acp) == ch) {
-        int c;
-        while((c=A_SEE_PARSER_NEXT_CHR(acp))) {
-          if(c == ch) {
-            rc=1;
-            break;
-          } else if(c == '\\') {
-            A_SEE_PARSER_NEXT_CHR(acp);
-          }
-        }
-      }
-      rc;
-    })
-  ) && A_SEE_PARSER_CAPTURE_OFF(acp) && a_see_parser_space(acp);
-#endif
+  if(*ptr == ch) {
+    for(ptr++;*ptr;ptr++) {
+      if(*ptr == '\\') ptr++;
+      else if(*ptr == ch)
+        break;
+    }
+    if(*ptr) {
+      acp->capture_.begin_=acp->ptr_;
+      acp->ptr_=ptr;
+      acp->capture_.end_=acp->ptr_;
+      rc = 1;
+    }
+  }
+  return rc;
 }
